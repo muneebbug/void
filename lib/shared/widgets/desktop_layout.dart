@@ -163,31 +163,40 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
     final isDesktopPlatform = !kIsWeb &&
         (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
 
-    final barContent = Container(
+    return Container(
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
       ),
-      child: Row(
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          // Flexible Search Pill with integrated Quick Actions (Readest style)
-          Expanded(
-            child: _buildSearchAndQuickActionPill(context, isDark),
+          // Background drag area (draggable across the entire titlebar empty spaces)
+          if (isDesktopPlatform)
+            const Positioned.fill(
+              child: DragToMoveArea(
+                child: SizedBox.expand(),
+              ),
+            ),
+
+          // Foreground interactive elements (search pill, cluster, window controls)
+          Row(
+            children: [
+              // Flexible Search Pill with integrated Quick Actions (Readest style)
+              Expanded(
+                child: _buildSearchAndQuickActionPill(context, isDark),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Right Cluster: '...' More Menu, View Mode, Window Controls
+              _buildRightCluster(context, isDark, isDesktopPlatform),
+            ],
           ),
-
-          const SizedBox(width: 12),
-
-          // Right Cluster: '...' More Menu, View Mode, Window Controls
-          _buildRightCluster(context, isDark, isDesktopPlatform),
         ],
       ),
     );
-
-    if (isDesktopPlatform) {
-      return DragToMoveArea(child: barContent);
-    }
-    return barContent;
   }
 
   Widget _buildSearchAndQuickActionPill(
@@ -476,9 +485,9 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
             icon: Icons.remove,
             tooltip: 'Minimize',
             isDark: isDark,
-            onPressed: () async {
+            onPressed: () {
               try {
-                await windowManager.minimize();
+                windowManager.minimize();
               } catch (_) {}
             },
           ),
@@ -489,12 +498,12 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
                 : Icons.crop_square_rounded,
             tooltip: _isMaximized ? 'Restore' : 'Maximize',
             isDark: isDark,
-            onPressed: () async {
+            onPressed: () {
               try {
-                if (await windowManager.isMaximized()) {
-                  await windowManager.unmaximize();
+                if (_isMaximized) {
+                  windowManager.unmaximize();
                 } else {
-                  await windowManager.maximize();
+                  windowManager.maximize();
                 }
               } catch (_) {}
             },
@@ -505,9 +514,9 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
             tooltip: 'Close',
             isDark: isDark,
             isClose: true,
-            onPressed: () async {
+            onPressed: () {
               try {
-                await windowManager.close();
+                windowManager.close();
               } catch (_) {}
             },
           ),
@@ -523,20 +532,27 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
     required VoidCallback onPressed,
     bool isClose = false,
   }) {
-    return InkWell(
-      onTap: onPressed,
-      borderRadius: BorderRadius.circular(4),
-      hoverColor: isClose
-          ? AppColors.error
-          : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        child: Icon(
-          icon,
-          size: 14,
-          color: isDark
-              ? AppColors.textSecondaryDark
-              : AppColors.textSecondaryLight,
+    return Tooltip(
+      message: tooltip,
+      waitDuration: const Duration(milliseconds: 600),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(4),
+          hoverColor: isClose
+              ? AppColors.error
+              : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+            child: Icon(
+              icon,
+              size: 14,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
+            ),
+          ),
         ),
       ),
     );
