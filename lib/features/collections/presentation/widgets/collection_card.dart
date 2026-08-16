@@ -9,7 +9,6 @@ class CollectionCard extends StatefulWidget {
   final List<Item> previewItems;
   final VoidCallback onTap;
   final VoidCallback onEdit;
-  final VoidCallback onExport;
   final VoidCallback onDelete;
 
   const CollectionCard({
@@ -18,7 +17,6 @@ class CollectionCard extends StatefulWidget {
     this.previewItems = const [],
     required this.onTap,
     required this.onEdit,
-    required this.onExport,
     required this.onDelete,
   });
 
@@ -57,16 +55,6 @@ class _CollectionCardState extends State<CollectionCard> {
           ),
         ),
         const PopupMenuItem(
-          value: 'export',
-          child: Row(
-            children: [
-              Icon(Icons.import_export, size: 15),
-              SizedBox(width: 8),
-              Text('Export JSON / CSV'),
-            ],
-          ),
-        ),
-        const PopupMenuItem(
           value: 'delete',
           child: Row(
             children: [
@@ -89,7 +77,6 @@ class _CollectionCardState extends State<CollectionCard> {
     if (mounted) setState(() => _isMenuOpen = false);
 
     if (selected == 'edit') widget.onEdit();
-    if (selected == 'export') widget.onExport();
     if (selected == 'delete') widget.onDelete();
   }
 
@@ -181,7 +168,6 @@ class _CollectionCardState extends State<CollectionCard> {
                                 onSelected: (val) {
                                   setState(() => _isMenuOpen = false);
                                   if (val == 'edit') widget.onEdit();
-                                  if (val == 'export') widget.onExport();
                                   if (val == 'delete') widget.onDelete();
                                 },
                                 itemBuilder: (context) => [
@@ -192,16 +178,6 @@ class _CollectionCardState extends State<CollectionCard> {
                                         Icon(Icons.edit_outlined, size: 15),
                                         SizedBox(width: 8),
                                         Text('Edit Collection'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'export',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.import_export, size: 15),
-                                        SizedBox(width: 8),
-                                        Text('Export JSON / CSV'),
                                       ],
                                     ),
                                   ),

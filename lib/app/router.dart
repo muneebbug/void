@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:void_app/features/collections/presentation/widgets/collection_view.dart';
 import 'package:void_app/features/collections/presentation/widgets/home_lists_view.dart';
 import 'package:void_app/features/media_search/presentation/widgets/media_search_view.dart';
-import 'package:void_app/features/search/presentation/widgets/search_view.dart';
 import 'package:void_app/features/settings/presentation/widgets/settings_view.dart';
 import 'package:void_app/shared/widgets/desktop_layout.dart';
 
@@ -51,13 +50,6 @@ final GoRouter appRouter = GoRouter(
               child: MediaSearchView(collectionId: id),
             );
           },
-        ),
-        GoRoute(
-          path: '/search',
-          pageBuilder: (context, state) => NoTransitionPage(
-            key: state.pageKey,
-            child: const SearchView(),
-          ),
         ),
         GoRoute(
           path: '/settings',

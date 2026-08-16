@@ -8,7 +8,6 @@ import 'package:void_app/features/collections/data/collection_repository.dart';
 import 'package:void_app/features/collections/presentation/providers/collection_providers.dart';
 import 'package:void_app/features/collections/presentation/widgets/collection_card.dart';
 import 'package:void_app/features/collections/presentation/widgets/collection_editor_dialog.dart';
-import 'package:void_app/features/import_export/presentation/widgets/import_export_dialog.dart';
 import 'package:void_app/features/items/data/item_repository.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/items/presentation/providers/item_providers.dart';
@@ -132,10 +131,6 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
                                   context,
                                   collection: col,
                                 ),
-                                onExport: () => ImportExportDialog.show(
-                                  context,
-                                  initialCollectionId: col.id,
-                                ),
                                 onDelete: () async {
                                   final confirmed = await ConfirmDialog.show(
                                     context,
@@ -252,10 +247,6 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
                               onEdit: () => CollectionEditorDialog.show(
                                 context,
                                 collection: col,
-                              ),
-                              onExport: () => ImportExportDialog.show(
-                                context,
-                                initialCollectionId: col.id,
                               ),
                               onDelete: () async {
                                 final confirmed = await ConfirmDialog.show(

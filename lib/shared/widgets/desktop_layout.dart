@@ -8,12 +8,10 @@ import 'package:void_app/core/theme/app_colors.dart';
 import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/features/collections/presentation/providers/collection_providers.dart';
 import 'package:void_app/features/collections/presentation/widgets/collection_editor_dialog.dart';
-import 'package:void_app/features/import_export/presentation/widgets/import_export_dialog.dart';
 import 'package:void_app/features/items/presentation/providers/item_providers.dart';
 import 'package:void_app/features/media_search/presentation/widgets/media_search_dialog.dart';
 import 'package:void_app/features/search/presentation/providers/search_provider.dart';
 import 'package:void_app/features/settings/presentation/providers/settings_provider.dart';
-import 'package:void_app/shared/widgets/command_palette.dart';
 import 'package:window_manager/window_manager.dart';
 
 class DesktopLayout extends ConsumerStatefulWidget {
@@ -95,11 +93,6 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
     if (event is KeyDownEvent) {
       final isControlOrMeta = HardwareKeyboard.instance.isControlPressed ||
           HardwareKeyboard.instance.isMetaPressed;
-
-      // Ctrl/Cmd + K -> Command Palette
-      if (isControlOrMeta && event.logicalKey == LogicalKeyboardKey.keyK) {
-        CommandPalette.show(context);
-      }
 
       // Ctrl/Cmd + N -> New Item or Collection
       if (isControlOrMeta && event.logicalKey == LogicalKeyboardKey.keyN) {
@@ -403,11 +396,7 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
           ),
           tooltip: 'More options',
           onSelected: (val) {
-            if (val == 'command_palette') {
-              CommandPalette.show(context);
-            } else if (val == 'import_export') {
-              ImportExportDialog.show(context);
-            } else if (val == 'settings') {
+            if (val == 'settings') {
               context.go('/settings');
             } else if (val == 'toggle_theme') {
               final current = ref.read(settingsProvider).themeMode;
@@ -419,26 +408,6 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
             }
           },
           itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'command_palette',
-              child: Row(
-                children: [
-                  Icon(Icons.terminal, size: 16),
-                  SizedBox(width: 8),
-                  Text('Command Palette (Ctrl+K)'),
-                ],
-              ),
-            ),
-            const PopupMenuItem(
-              value: 'import_export',
-              child: Row(
-                children: [
-                  Icon(Icons.import_export, size: 16),
-                  SizedBox(width: 8),
-                  Text('Import / Export Backup'),
-                ],
-              ),
-            ),
             const PopupMenuItem(
               value: 'settings',
               child: Row(

@@ -8,8 +8,6 @@ import 'package:void_app/features/items/domain/field_value.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/schemas/data/builtin_schemas.dart';
 import 'package:void_app/features/schemas/data/schema_repository.dart';
-import 'package:void_app/features/search/data/local_search_repository.dart';
-import 'package:void_app/features/search/domain/search_result.dart';
 
 void main() {
   group('Repository End-to-End Tests', () {
@@ -17,19 +15,12 @@ void main() {
     late SqliteSchemaRepository schemaRepo;
     late SqliteCollectionRepository collectionRepo;
     late SqliteItemRepository itemRepo;
-    late SqliteLocalSearchRepository searchRepo;
 
     setUp(() {
       db = AppDatabase.inMemory();
       schemaRepo = SqliteSchemaRepository(db);
       collectionRepo = SqliteCollectionRepository(db);
       itemRepo = SqliteItemRepository(db, schemaRepo);
-      searchRepo = SqliteLocalSearchRepository(
-        db,
-        itemRepo,
-        collectionRepo,
-        schemaRepo,
-      );
     });
 
     tearDown(() {
@@ -162,54 +153,6 @@ void main() {
       await itemRepo.deleteItem(itemId);
       final afterDelete = await itemRepo.getItemById(itemId);
       expect(afterDelete, isNull);
-    });
-
-    test('LocalSearchRepository searches items, fields, and collections',
-        () async {
-      final now = DateTime.now();
-      final colId = IdGenerator.generate();
-      await collectionRepo.createCollection(
-        Collection(
-          id: colId,
-          name: 'Cyberpunk Masterpieces',
-          schemaId: BuiltinSchemas.moviesSchemaId,
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-
-      await itemRepo.createItem(
-        Item(
-          id: IdGenerator.generate(),
-          collectionId: colId,
-          schemaId: BuiltinSchemas.moviesSchemaId,
-          title: 'Blade Runner 2049',
-          data: {
-            'director': const FieldValue.text('Denis Villeneuve'),
-            'genre': const FieldValue.select('Sci-Fi'),
-          },
-          createdAt: now,
-          updatedAt: now,
-        ),
-      );
-
-      // Search matching title
-      final titleResults = await searchRepo.search('Blade');
-      expect(titleResults.isNotEmpty, isTrue);
-      expect(titleResults.first.type, equals(SearchResultType.item));
-      expect(titleResults.first.title, equals('Blade Runner 2049'));
-
-      // Search matching dynamic data field
-      final directorResults = await searchRepo.search('Villeneuve');
-      expect(directorResults.isNotEmpty, isTrue);
-      expect(directorResults.any((r) => r.title == 'Blade Runner 2049'), isTrue);
-
-      // Search matching collection name
-      final colResults = await searchRepo.search('Cyberpunk');
-      expect(
-        colResults.any((r) => r.type == SearchResultType.collection),
-        isTrue,
-      );
     });
   });
 }
