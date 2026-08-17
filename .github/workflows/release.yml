@@ -161,6 +161,8 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ github.ref_name }}
           name: ${{ needs.setup.outputs.app_name }} v${{ needs.setup.outputs.version }}
           draft: false
           prerelease: ${{ contains(needs.setup.outputs.version, '-') }}
