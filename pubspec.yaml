@@ -1,5 +1,5 @@
 name: void_app
-description: "VOID - A local-first desktop application"
+description: "VOID - A local-first desktop application for cataloging and managing personal media collections."
 publish_to: "none"
 version: 1.0.0+1
 
