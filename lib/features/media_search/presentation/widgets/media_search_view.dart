@@ -275,7 +275,7 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: state.results.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
       itemBuilder: (context, index) {
         final candidate = state.results[index];
         final isSelected = _selectedCandidate?.id == candidate.id;
@@ -309,7 +309,7 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
                 children: [
                   // Poster Thumbnail
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(5),
+                    borderRadius: BorderRadius.circular(4),
                     child: candidate.coverUrl != null &&
                             candidate.coverUrl!.isNotEmpty
                         ? Image.network(
@@ -317,7 +317,7 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
                             width: 36,
                             height: 50,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
+                            errorBuilder: (_, _, _) => Container(
                               width: 36,
                               height: 50,
                               color: isDark
@@ -477,7 +477,7 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
               candidate.coverUrl!,
               height: 280,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 height: 280,
                 color:
                     isDark ? const Color(0xFF161A26) : const Color(0xFFE2E8F0),

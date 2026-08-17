@@ -147,7 +147,7 @@ class _ItemListTileState extends State<ItemListTile> {
                     ? Image.network(
                         widget.item.coverImage!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildFallbackCover(isDark),
+                        errorBuilder: (_, _, _) => _buildFallbackCover(isDark),
                       )
                     : _buildFallbackCover(isDark),
               ),

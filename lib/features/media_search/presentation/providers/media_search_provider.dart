@@ -36,18 +36,18 @@ class MediaSearchState {
   }
 }
 
-class MediaSearchNotifier extends StateNotifier<MediaSearchState> {
-  final Ref _ref;
-  final String _schemaId;
+class MediaSearchNotifier extends Notifier<MediaSearchState> {
+  final String schemaId;
   Timer? _debounceTimer;
 
-  MediaSearchNotifier(this._ref, this._schemaId)
-      : super(const MediaSearchState());
+  MediaSearchNotifier(this.schemaId);
 
   @override
-  void dispose() {
-    _debounceTimer?.cancel();
-    super.dispose();
+  MediaSearchState build() {
+    ref.onDispose(() {
+      _debounceTimer?.cancel();
+    });
+    return const MediaSearchState();
   }
 
   void onQueryChanged(String query) {
@@ -55,7 +55,7 @@ class MediaSearchNotifier extends StateNotifier<MediaSearchState> {
     _debounceTimer?.cancel();
 
     if (query.trim().isEmpty) {
-      state = state.copyWith(results: [], isLoading: false, errorMessage: null);
+      state = state.copyWith(results: const [], isLoading: false, errorMessage: null);
       return;
     }
 
@@ -67,8 +67,8 @@ class MediaSearchNotifier extends StateNotifier<MediaSearchState> {
 
   Future<void> _executeSearch(String query) async {
     try {
-      final repo = _ref.read(mediaSearchRepositoryProvider);
-      final results = await repo.searchMedia(query: query, schemaId: _schemaId);
+      final repo = ref.read(mediaSearchRepositoryProvider);
+      final results = await repo.searchMedia(query: query, schemaId: schemaId);
       state = state.copyWith(
         results: results,
         isLoading: false,
@@ -76,7 +76,7 @@ class MediaSearchNotifier extends StateNotifier<MediaSearchState> {
       );
     } catch (e) {
       state = state.copyWith(
-        results: [],
+        results: const [],
         isLoading: false,
         errorMessage: 'Search error. Check your connection or search query.',
       );
@@ -89,11 +89,11 @@ class MediaSearchNotifier extends StateNotifier<MediaSearchState> {
   ) async {
     state = state.copyWith(isAdding: true);
     try {
-      final repo = _ref.read(mediaSearchRepositoryProvider);
+      final repo = ref.read(mediaSearchRepositoryProvider);
       final item = await repo.addItemFromSearchResult(
         result: candidate,
         collectionId: collectionId,
-        schemaId: _schemaId,
+        schemaId: schemaId,
       );
       state = state.copyWith(isAdding: false);
       return item;
@@ -107,7 +107,7 @@ class MediaSearchNotifier extends StateNotifier<MediaSearchState> {
   }
 }
 
-final mediaSearchProvider = StateNotifierProvider.autoDispose
-    .family<MediaSearchNotifier, MediaSearchState, String>((ref, schemaId) {
-  return MediaSearchNotifier(ref, schemaId);
-});
+final mediaSearchProvider = NotifierProvider.autoDispose
+    .family<MediaSearchNotifier, MediaSearchState, String>(
+  MediaSearchNotifier.new,
+);

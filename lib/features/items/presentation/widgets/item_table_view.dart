@@ -81,7 +81,7 @@ class ItemTableView extends StatelessWidget {
                             width: 24,
                             height: 24,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const Icon(
+                            errorBuilder: (_, _, _) => const Icon(
                               Icons.insert_drive_file_outlined,
                               size: 16,
                             ),

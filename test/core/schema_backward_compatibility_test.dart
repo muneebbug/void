@@ -213,8 +213,8 @@ void main() {
       expect(reloaded.data['director'], equals(const FieldValue.text('Christopher Nolan')));
       expect(reloaded.data['release_year'], equals(const FieldValue.number(2010)));
 
-      db.close();
-      rawDb.dispose();
+      await db.close();
+      rawDb.close();
     });
 
     test('FieldValueSerializer handles corrupted, missing, and unexpected field formats gracefully', () {

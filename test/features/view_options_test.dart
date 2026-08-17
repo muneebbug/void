@@ -120,7 +120,7 @@ void main() {
       expect(container.read(settingsProvider).gridColumns, isNull);
 
       container.dispose();
-      db.close();
+      await db.close();
     });
   });
 }

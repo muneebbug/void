@@ -313,7 +313,7 @@ class _CollectionCardState extends State<CollectionCard> {
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, __, ___) => _buildFallbackTile(isDark),
+        errorBuilder: (_, _, _) => _buildFallbackTile(isDark),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) return child;
           return Container(

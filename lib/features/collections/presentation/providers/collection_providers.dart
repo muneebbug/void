@@ -8,7 +8,19 @@ final collectionsStreamProvider = StreamProvider<List<Collection>>((ref) {
   return repo.watchCollections();
 });
 
-final selectedCollectionIdProvider = StateProvider<String?>((ref) => null);
+class SelectedCollectionIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  @override
+  set state(String? value) => super.state = value;
+  void select(String? id) => state = id;
+}
+
+final selectedCollectionIdProvider =
+    NotifierProvider<SelectedCollectionIdNotifier, String?>(
+  SelectedCollectionIdNotifier.new,
+);
 
 final selectedCollectionProvider = Provider<Collection?>((ref) {
   final id = ref.watch(selectedCollectionIdProvider);
@@ -23,10 +35,9 @@ final collectionDetailProvider =
   return repo.getCollectionById(id);
 });
 
-class CollectionActionNotifier extends StateNotifier<AsyncValue<void>> {
-  final Ref _ref;
-
-  CollectionActionNotifier(this._ref) : super(const AsyncValue.data(null));
+class CollectionActionNotifier extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncValue.data(null);
 
   Future<Collection> createCollection({
     required String name,
@@ -45,7 +56,7 @@ class CollectionActionNotifier extends StateNotifier<AsyncValue<void>> {
         updatedAt: now,
       );
 
-      final repo = _ref.read(collectionRepositoryProvider);
+      final repo = ref.read(collectionRepositoryProvider);
       await repo.createCollection(collection);
       state = const AsyncValue.data(null);
       return collection;
@@ -58,7 +69,7 @@ class CollectionActionNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> updateCollection(Collection collection) async {
     state = const AsyncValue.loading();
     try {
-      final repo = _ref.read(collectionRepositoryProvider);
+      final repo = ref.read(collectionRepositoryProvider);
       await repo.updateCollection(collection);
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -70,7 +81,7 @@ class CollectionActionNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> deleteCollection(String id) async {
     state = const AsyncValue.loading();
     try {
-      final repo = _ref.read(collectionRepositoryProvider);
+      final repo = ref.read(collectionRepositoryProvider);
       await repo.deleteCollection(id);
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -81,6 +92,6 @@ class CollectionActionNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 final collectionActionProvider =
-    StateNotifierProvider<CollectionActionNotifier, AsyncValue<void>>((ref) {
-  return CollectionActionNotifier(ref);
-});
+    NotifierProvider<CollectionActionNotifier, AsyncValue<void>>(
+  CollectionActionNotifier.new,
+);

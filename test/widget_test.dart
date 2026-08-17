@@ -34,6 +34,6 @@ void main() {
     // Verify more options menu
     expect(find.byIcon(Icons.more_horiz), findsWidgets);
 
-    db.close();
+    await db.close();
   });
 }

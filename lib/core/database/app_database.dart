@@ -18,8 +18,7 @@ class AppDatabase {
   Stream<void> get onCollectionsChanged => _collectionsUpdateController.stream;
   Stream<void> get onItemsChanged => _itemsUpdateController.stream;
 
-  AppDatabase._(this._db, {bool isInMemory = false})
-      : _isInMemory = isInMemory {
+  AppDatabase._(this._db, {this._isInMemory = false}) {
     _initDatabase();
   }
 
@@ -264,10 +263,10 @@ class AppDatabase {
     }
   }
 
-  void close() {
-    _schemasUpdateController.close();
-    _collectionsUpdateController.close();
-    _itemsUpdateController.close();
-    _db.dispose();
+  Future<void> close() async {
+    await _schemasUpdateController.close();
+    await _collectionsUpdateController.close();
+    await _itemsUpdateController.close();
+    _db.close();
   }
 }

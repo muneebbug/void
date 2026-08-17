@@ -227,7 +227,7 @@ class _MediaSearchDialogState extends ConsumerState<MediaSearchDialog> {
     return ListView.separated(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       itemCount: searchState.results.length,
-      separatorBuilder: (_, __) => Divider(
+      separatorBuilder: (_, _) => Divider(
         height: 1,
         color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
       ),
@@ -250,7 +250,7 @@ class _MediaSearchDialogState extends ConsumerState<MediaSearchDialog> {
                       ? Image.network(
                           item.coverUrl!,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
+                          errorBuilder: (_, _, _) =>
                               _buildCoverPlaceholder(isDark, schemaId),
                         )
                       : _buildCoverPlaceholder(isDark, schemaId),

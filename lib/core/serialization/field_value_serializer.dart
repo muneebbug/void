@@ -5,13 +5,13 @@ import 'package:void_app/features/schemas/domain/field_type.dart';
 import 'package:void_app/features/schemas/domain/schema_field.dart';
 
 class FieldValueSerializer {
-  /// Converts a Map<String, FieldValue> to a JSON String for SQLite storage
+  /// Converts a `Map<String, FieldValue>` to a JSON String for SQLite storage
   static String toJsonString(Map<String, FieldValue> data) {
     final rawMap = toRawMap(data);
     return jsonEncode(rawMap);
   }
 
-  /// Converts a Map<String, FieldValue> to Map<String, dynamic>
+  /// Converts a `Map<String, FieldValue>` to `Map<String, dynamic>`
   static Map<String, dynamic> toRawMap(Map<String, FieldValue> data) {
     final Map<String, dynamic> result = {};
     for (final entry in data.entries) {
@@ -20,7 +20,7 @@ class FieldValueSerializer {
     return result;
   }
 
-  /// Parses a JSON string from SQLite into typed Map<String, FieldValue> given the SchemaFields
+  /// Parses a JSON string from SQLite into typed `Map<String, FieldValue>` given the SchemaFields
   static Map<String, FieldValue> fromJsonString(
     String jsonString, {
     List<SchemaField> schemaFields = const [],
@@ -37,7 +37,7 @@ class FieldValueSerializer {
     }
   }
 
-  /// Parses a raw Map<String, dynamic> into Map<String, FieldValue>
+  /// Parses a raw `Map<String, dynamic>` into `Map<String, FieldValue>`
   static Map<String, FieldValue> fromRawMap(
     Map<String, dynamic> rawMap, {
     List<SchemaField> schemaFields = const [],

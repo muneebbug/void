@@ -8,7 +8,19 @@ import 'package:void_app/features/items/domain/field_value.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/schemas/presentation/providers/schema_providers.dart';
 
-final selectedItemIdProvider = StateProvider<String?>((ref) => null);
+class SelectedItemIdNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  @override
+  set state(String? value) => super.state = value;
+  void select(String? id) => state = id;
+}
+
+final selectedItemIdProvider =
+    NotifierProvider<SelectedItemIdNotifier, String?>(
+  SelectedItemIdNotifier.new,
+);
 
 final collectionItemsProvider =
     StreamProvider.family<List<Item>, String>((ref, collectionId) {
@@ -35,10 +47,9 @@ final itemDetailStreamProvider =
   yield item;
 });
 
-class ItemActionNotifier extends StateNotifier<AsyncValue<void>> {
-  final Ref _ref;
-
-  ItemActionNotifier(this._ref) : super(const AsyncValue.data(null));
+class ItemActionNotifier extends Notifier<AsyncValue<void>> {
+  @override
+  AsyncValue<void> build() => const AsyncValue.data(null);
 
   Future<Item> createManualItem({
     required String title,
@@ -61,7 +72,7 @@ class ItemActionNotifier extends StateNotifier<AsyncValue<void>> {
         updatedAt: now,
       );
 
-      final repo = _ref.read(itemRepositoryProvider);
+      final repo = ref.read(itemRepositoryProvider);
       await repo.createItem(item);
       state = const AsyncValue.data(null);
       return item;
@@ -74,7 +85,7 @@ class ItemActionNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> updateItem(Item item) async {
     state = const AsyncValue.loading();
     try {
-      final repo = _ref.read(itemRepositoryProvider);
+      final repo = ref.read(itemRepositoryProvider);
       await repo.updateItem(item);
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -86,7 +97,7 @@ class ItemActionNotifier extends StateNotifier<AsyncValue<void>> {
   Future<void> deleteItem(String id) async {
     state = const AsyncValue.loading();
     try {
-      final repo = _ref.read(itemRepositoryProvider);
+      final repo = ref.read(itemRepositoryProvider);
       await repo.deleteItem(id);
       state = const AsyncValue.data(null);
     } catch (e, st) {
@@ -101,9 +112,9 @@ class ItemActionNotifier extends StateNotifier<AsyncValue<void>> {
 }
 
 final itemActionProvider =
-    StateNotifierProvider<ItemActionNotifier, AsyncValue<void>>((ref) {
-  return ItemActionNotifier(ref);
-});
+    NotifierProvider<ItemActionNotifier, AsyncValue<void>>(
+  ItemActionNotifier.new,
+);
 
 class ItemEditorState {
   final Item item;
@@ -133,11 +144,15 @@ class ItemEditorState {
   }
 }
 
-class ItemEditorNotifier extends StateNotifier<ItemEditorState> {
-  final Ref _ref;
+class ItemEditorNotifier extends Notifier<ItemEditorState> {
+  final Item initialItem;
 
-  ItemEditorNotifier(this._ref, Item initialItem)
-      : super(ItemEditorState(item: initialItem));
+  ItemEditorNotifier(this.initialItem);
+
+  @override
+  ItemEditorState build() {
+    return ItemEditorState(item: initialItem);
+  }
 
   void updateTitle(String title) {
     state = state.copyWith(
@@ -191,7 +206,7 @@ class ItemEditorNotifier extends StateNotifier<ItemEditorState> {
 
   Future<bool> save() async {
     final schema =
-        await _ref.read(schemaDetailProvider(state.item.schemaId).future);
+        await ref.read(schemaDetailProvider(state.item.schemaId).future);
     if (schema == null) return false;
 
     final validation = Validator.validateItem(state.item, schema);
@@ -205,7 +220,7 @@ class ItemEditorNotifier extends StateNotifier<ItemEditorState> {
       validationResult: ValidationResult.valid,
     );
     try {
-      final repo = _ref.read(itemRepositoryProvider);
+      final repo = ref.read(itemRepositoryProvider);
       await repo.updateItem(state.item);
       state = state.copyWith(isSaving: false, hasUnsavedChanges: false);
       return true;
@@ -216,7 +231,7 @@ class ItemEditorNotifier extends StateNotifier<ItemEditorState> {
   }
 }
 
-final itemEditorProvider = StateNotifierProvider.autoDispose
-    .family<ItemEditorNotifier, ItemEditorState, Item>((ref, item) {
-  return ItemEditorNotifier(ref, item);
-});
+final itemEditorProvider =
+    NotifierProvider.autoDispose.family<ItemEditorNotifier, ItemEditorState, Item>(
+  ItemEditorNotifier.new,
+);

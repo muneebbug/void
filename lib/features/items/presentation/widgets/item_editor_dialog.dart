@@ -179,7 +179,7 @@ class _ItemEditorDialogState extends ConsumerState<ItemEditorDialog> {
                               ),
                             ),
                             loading: () => const SizedBox.shrink(),
-                            error: (_, __) => const SizedBox.shrink(),
+                            error: (_, _) => const SizedBox.shrink(),
                           ),
                         ],
                       ),
@@ -316,7 +316,7 @@ class _ItemEditorDialogState extends ConsumerState<ItemEditorDialog> {
                 _coverImageController.text.trim(),
                 height: 140,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   height: 140,
                   color: Colors.grey.withValues(alpha: 0.1),
                   child: const Center(
@@ -402,7 +402,7 @@ class _ItemEditorDialogState extends ConsumerState<ItemEditorDialog> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _subItems.length,
-                separatorBuilder: (_, __) => const Divider(height: 1),
+                separatorBuilder: (_, _) => const Divider(height: 1),
                 itemBuilder: (context, idx) {
                   final sub = _subItems[idx];
                   return ListTile(

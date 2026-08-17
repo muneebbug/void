@@ -176,7 +176,7 @@ class _ItemDetailViewState extends ConsumerState<ItemDetailView> {
                               ? Image.network(
                                   item.coverImage!,
                                   fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) =>
+                                  errorBuilder: (_, _, _) =>
                                       _buildFallbackCover(isDark),
                                 )
                               : _buildFallbackCover(isDark),
@@ -411,7 +411,7 @@ class _ItemDetailViewState extends ConsumerState<ItemDetailView> {
                         );
                       },
                       loading: () => const SizedBox.shrink(),
-                      error: (_, __) => const SizedBox.shrink(),
+                      error: (_, _) => const SizedBox.shrink(),
                     ),
 
                     // Sub-items Section
@@ -470,7 +470,7 @@ class _ItemDetailViewState extends ConsumerState<ItemDetailView> {
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
                           itemCount: item.subItems.length,
-                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          separatorBuilder: (_, _) => const Divider(height: 1),
                           itemBuilder: (context, idx) {
                             final sub = item.subItems[idx];
                             return ListTile(

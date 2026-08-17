@@ -373,7 +373,7 @@ class DynamicFieldInput extends StatelessWidget {
               height: 120,
               width: 120,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 height: 120,
                 width: 120,
                 color: Colors.grey.withValues(alpha: 0.2),

@@ -1,0 +1,147 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+env:
+  FLUTTER_VERSION: "3.24.0"
+
+jobs:
+  # ----------------------------------------------------------------------
+  # Read the app name/version once, share it with every other job
+  # ----------------------------------------------------------------------
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      app_name: ${{ steps.vars.outputs.app_name }}
+      version: ${{ steps.vars.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: vars
+        run: |
+          APP_NAME=$(grep '^name:' pubspec.yaml | head -1 | awk '{print $2}')
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "app_name=$APP_NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+  # ----------------------------------------------------------------------
+  # Windows build
+  # ----------------------------------------------------------------------
+  build-windows:
+    needs: setup
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-windows-desktop
+      - run: flutter pub get
+      - run: flutter build windows --release
+
+      - name: Zip build output
+        shell: pwsh
+        run: |
+          $src = "build/windows/x64/runner/Release"
+          $dest = "${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-windows.zip"
+          Compress-Archive -Path "$src/*" -DestinationPath $dest
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: "*-windows.zip"
+
+  # ----------------------------------------------------------------------
+  # Linux build
+  # ----------------------------------------------------------------------
+  build-linux:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-linux-desktop
+      - run: flutter pub get
+      - run: flutter build linux --release
+
+      - name: Zip build output
+        run: |
+          cd build/linux/x64/release/bundle
+          zip -r "../../../../../${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-linux.zip" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: "*-linux.zip"
+
+  # ----------------------------------------------------------------------
+  # macOS build
+  # ----------------------------------------------------------------------
+  build-macos:
+    needs: setup
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+
+      - run: flutter config --enable-macos-desktop
+      - run: flutter pub get
+      - run: flutter build macos --release
+
+      - name: Zip .app bundle
+        run: |
+          cd build/macos/Build/Products/Release
+          zip -r "${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-macos.zip" *.app
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: "build/macos/Build/Products/Release/*-macos.zip"
+
+  # ----------------------------------------------------------------------
+  # Collect all three builds and publish a GitHub Release
+  # ----------------------------------------------------------------------
+  release:
+    needs: [setup, build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: List downloaded files
+        run: ls -R dist
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ needs.setup.outputs.app_name }} v${{ needs.setup.outputs.version }}
+          draft: false
+          prerelease: ${{ contains(needs.setup.outputs.version, '-') }}
+          generate_release_notes: true
+          files: dist/*

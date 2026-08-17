@@ -175,7 +175,7 @@ class _CollectionListTileState extends State<CollectionListTile> {
                                 scrollDirection: Axis.horizontal,
                                 physics: const ClampingScrollPhysics(),
                                 itemCount: itemsWithCovers.length,
-                                separatorBuilder: (_, __) =>
+                                separatorBuilder: (_, _) =>
                                     const SizedBox(width: coverGap),
                                 itemBuilder: (context, index) {
                                   return _buildCoverThumbnail(
@@ -265,7 +265,7 @@ class _CollectionListTileState extends State<CollectionListTile> {
       child: Image.network(
         url,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => Center(
+        errorBuilder: (_, _, _) => Center(
           child: Icon(
             Icons.insert_drive_file_outlined,
             size: 16,
