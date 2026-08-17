@@ -339,18 +339,19 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
                   : AppColors.textSecondaryLight,
             ),
             tooltip:
-                widget.currentRoute == '/' ? 'New List' : 'Search & Add Media',
+                widget.currentRoute.startsWith('/collection/')
+                    ? 'Add Item to List'
+                    : 'New List',
             onPressed: () {
-              if (widget.currentRoute == '/') {
-                CollectionEditorDialog.show(context);
-              } else {
-                final activeCol = ref.read(selectedCollectionProvider);
-                if (activeCol != null) {
-                  MediaSearchDialog.show(context, collectionId: activeCol.id);
-                } else {
-                  CollectionEditorDialog.show(context);
+              if (widget.currentRoute.startsWith('/collection/')) {
+                final segments = widget.currentRoute.split('/');
+                final colId = segments.length > 2 ? segments[2] : null;
+                if (colId != null) {
+                  MediaSearchDialog.show(context, collectionId: colId);
+                  return;
                 }
               }
+              CollectionEditorDialog.show(context);
             },
           ),
 
