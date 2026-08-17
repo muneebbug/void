@@ -27,7 +27,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
   # ----------------------------------------------------------------------
-  # Windows build
+  # Windows build (Installer .exe + Portable .zip)
   # ----------------------------------------------------------------------
   build-windows:
     needs: setup
@@ -44,20 +44,29 @@ jobs:
       - run: flutter pub get
       - run: flutter build windows --release
 
-      - name: Zip build output
+      - name: Build Windows Setup Installer (.exe)
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" /DMyAppName="${{ needs.setup.outputs.app_name }}" /DMyAppVersion="${{ needs.setup.outputs.version }}" packaging/windows/setup.iss
+          Move-Item -Path "dist-setup\*.exe" -Destination "."
+
+      - name: Zip build output (Portable .zip)
         shell: pwsh
         run: |
           $src = "build/windows/x64/runner/Release"
-          $dest = "${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-windows.zip"
+          $dest = "${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-windows-portable.zip"
           Compress-Archive -Path "$src/*" -DestinationPath $dest
 
       - uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: "*-windows.zip"
+          path: |
+            *-windows-setup.exe
+            *-windows-portable.zip
 
   # ----------------------------------------------------------------------
-  # Linux build
+  # Linux build (Portable .tar.gz and .zip)
   # ----------------------------------------------------------------------
   build-linux:
     needs: setup
@@ -79,18 +88,21 @@ jobs:
       - run: flutter pub get
       - run: flutter build linux --release
 
-      - name: Zip build output
+      - name: Archive Linux bundle
         run: |
           cd build/linux/x64/release/bundle
+          tar -czf "../../../../../${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-linux.tar.gz" .
           zip -r "../../../../../${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-linux.zip" .
 
       - uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: "*-linux.zip"
+          path: |
+            *-linux.tar.gz
+            *-linux.zip
 
   # ----------------------------------------------------------------------
-  # macOS build
+  # macOS build (Drag-and-Drop .dmg Installer + .zip)
   # ----------------------------------------------------------------------
   build-macos:
     needs: setup
@@ -107,7 +119,20 @@ jobs:
       - run: flutter pub get
       - run: flutter build macos --release
 
-      - name: Zip .app bundle
+      - name: Build macOS DMG Installer (.dmg)
+        run: |
+          APP_NAME="${{ needs.setup.outputs.app_name }}"
+          VERSION="${{ needs.setup.outputs.version }}"
+          DMG_NAME="${APP_NAME}-${VERSION}-macos.dmg"
+          
+          mkdir -p dmg_staging
+          cp -r "build/macos/Build/Products/Release/${APP_NAME}.app" dmg_staging/
+          ln -s /Applications dmg_staging/Applications
+          
+          hdiutil create -volname "${APP_NAME}" -srcfolder dmg_staging -ov -format UDZO "${DMG_NAME}"
+          rm -rf dmg_staging
+
+      - name: Zip .app bundle (Fallback .zip)
         run: |
           cd build/macos/Build/Products/Release
           zip -r "${{ needs.setup.outputs.app_name }}-${{ needs.setup.outputs.version }}-macos.zip" *.app
@@ -115,10 +140,12 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: "build/macos/Build/Products/Release/*-macos.zip"
+          path: |
+            *-macos.dmg
+            build/macos/Build/Products/Release/*-macos.zip
 
   # ----------------------------------------------------------------------
-  # Collect all three builds and publish a GitHub Release
+  # Collect all builds and publish GitHub Release
   # ----------------------------------------------------------------------
   release:
     needs: [setup, build-windows, build-linux, build-macos]
@@ -129,8 +156,8 @@ jobs:
           path: dist
           merge-multiple: true
 
-      - name: List downloaded files
-        run: ls -R dist
+      - name: List release assets
+        run: ls -lh dist
 
       - uses: softprops/action-gh-release@v2
         with:
