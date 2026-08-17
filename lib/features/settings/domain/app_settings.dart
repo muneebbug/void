@@ -5,12 +5,14 @@ enum ItemViewMode { grid, list, table }
 class AppSettings {
   final ThemeMode themeMode;
   final ItemViewMode defaultViewMode;
+  final int? gridColumns; // null means Auto
   final bool autoSaveEnabled;
   final String? tmdbApiKey;
 
   const AppSettings({
     this.themeMode = ThemeMode.dark,
     this.defaultViewMode = ItemViewMode.grid,
+    this.gridColumns,
     this.autoSaveEnabled = true,
     this.tmdbApiKey,
   });
@@ -18,12 +20,15 @@ class AppSettings {
   AppSettings copyWith({
     ThemeMode? themeMode,
     ItemViewMode? defaultViewMode,
+    int? gridColumns,
+    bool clearGridColumns = false,
     bool? autoSaveEnabled,
     String? tmdbApiKey,
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
       defaultViewMode: defaultViewMode ?? this.defaultViewMode,
+      gridColumns: clearGridColumns ? null : (gridColumns ?? this.gridColumns),
       autoSaveEnabled: autoSaveEnabled ?? this.autoSaveEnabled,
       tmdbApiKey: tmdbApiKey ?? this.tmdbApiKey,
     );
@@ -32,6 +37,7 @@ class AppSettings {
   Map<String, dynamic> toJson() => {
         'themeMode': themeMode.name,
         'defaultViewMode': defaultViewMode.name,
+        'gridColumns': gridColumns,
         'autoSaveEnabled': autoSaveEnabled,
         'tmdbApiKey': tmdbApiKey,
       };
@@ -45,6 +51,7 @@ class AppSettings {
           (e) => e.name == json['defaultViewMode'],
           orElse: () => ItemViewMode.grid,
         ),
+        gridColumns: json['gridColumns'] as int?,
         autoSaveEnabled: json['autoSaveEnabled'] as bool? ?? true,
         tmdbApiKey: json['tmdbApiKey'] as String?,
       );
@@ -55,10 +62,16 @@ class AppSettings {
       (other is AppSettings &&
           other.themeMode == themeMode &&
           other.defaultViewMode == defaultViewMode &&
+          other.gridColumns == gridColumns &&
           other.autoSaveEnabled == autoSaveEnabled &&
           other.tmdbApiKey == tmdbApiKey);
 
   @override
-  int get hashCode =>
-      Object.hash(themeMode, defaultViewMode, autoSaveEnabled, tmdbApiKey);
+  int get hashCode => Object.hash(
+        themeMode,
+        defaultViewMode,
+        gridColumns,
+        autoSaveEnabled,
+        tmdbApiKey,
+      );
 }

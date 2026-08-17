@@ -69,6 +69,16 @@ class AppTheme {
           side: const BorderSide(color: AppColors.darkBorder, width: 1),
         ),
       ),
+      iconButtonTheme: const IconButtonThemeData(
+        style: ButtonStyle(
+          mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          enabledMouseCursor: SystemMouseCursors.click,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -77,6 +87,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelMedium,
+          enabledMouseCursor: SystemMouseCursors.click,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -86,7 +97,41 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelMedium,
+          enabledMouseCursor: SystemMouseCursors.click,
         ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          enabledMouseCursor: SystemMouseCursors.click,
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      menuButtonTheme: const MenuButtonThemeData(
+        style: ButtonStyle(
+          mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+        ),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      radioTheme: const RadioThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      checkboxTheme: const CheckboxThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      switchTheme: const SwitchThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      segmentedButtonTheme: const SegmentedButtonThemeData(
+        style: ButtonStyle(
+          mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       iconTheme: const IconThemeData(
         color: AppColors.textSecondaryDark,
@@ -169,6 +214,16 @@ class AppTheme {
           side: const BorderSide(color: AppColors.lightBorder, width: 1),
         ),
       ),
+      iconButtonTheme: const IconButtonThemeData(
+        style: ButtonStyle(
+          mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          enabledMouseCursor: SystemMouseCursors.click,
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
@@ -177,6 +232,7 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelMedium,
+          enabledMouseCursor: SystemMouseCursors.click,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -186,7 +242,54 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: AppTypography.labelMedium,
+          enabledMouseCursor: SystemMouseCursors.click,
         ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          enabledMouseCursor: SystemMouseCursors.click,
+        ),
+      ),
+      listTileTheme: const ListTileThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      menuButtonTheme: const MenuButtonThemeData(
+        style: ButtonStyle(
+          mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+        ),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      radioTheme: const RadioThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      checkboxTheme: const CheckboxThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      switchTheme: const SwitchThemeData(
+        mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+      ),
+      segmentedButtonTheme: const SegmentedButtonThemeData(
+        style: ButtonStyle(
+          mouseCursor: WidgetStatePropertyAll(SystemMouseCursors.click),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      ),
+      iconTheme: const IconThemeData(
+        color: AppColors.textSecondaryLight,
+        size: 20,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF1F5F9),
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: AppColors.lightBorder),
+        ),
+        textStyle:
+            AppTypography.bodySmall.copyWith(color: AppColors.textPrimaryLight),
       ),
     );
   }

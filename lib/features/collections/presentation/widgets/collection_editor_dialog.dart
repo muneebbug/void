@@ -239,6 +239,7 @@ class _CollectionEditorDialogState
           : (isDark ? AppColors.darkSurface : AppColors.lightSurface),
       borderRadius: BorderRadius.circular(10),
       child: InkWell(
+        mouseCursor: SystemMouseCursors.click,
         borderRadius: BorderRadius.circular(10),
         onTap: () {
           setState(() {

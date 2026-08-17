@@ -12,6 +12,8 @@ import 'package:void_app/features/items/presentation/providers/item_providers.da
 import 'package:void_app/features/media_search/presentation/widgets/media_search_dialog.dart';
 import 'package:void_app/features/search/presentation/providers/search_provider.dart';
 import 'package:void_app/features/settings/presentation/providers/settings_provider.dart';
+import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
+import 'package:void_app/shared/widgets/view_options_menu.dart';
 import 'package:window_manager/window_manager.dart';
 
 class DesktopLayout extends ConsumerStatefulWidget {
@@ -33,6 +35,8 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
   final FocusNode _focusNode = FocusNode();
   final FocusNode _searchFocusNode = FocusNode();
   final TextEditingController _searchController = TextEditingController();
+  final GlobalKey _viewOptionsKey = GlobalKey();
+  final GlobalKey _appMenuKey = GlobalKey();
   bool _isMaximized = false;
 
   @override
@@ -153,8 +157,8 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
     BuildContext context,
     bool isDark,
   ) {
-    final isDesktopPlatform = !kIsWeb &&
-        (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
+    final isDesktopPlatform =
+        !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
 
     return Container(
       height: 48,
@@ -246,9 +250,7 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
           Icon(
             Icons.search,
             size: 15,
-            color: isDark
-                ? AppColors.textMutedDark
-                : AppColors.textMutedLight,
+            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
           ),
           const SizedBox(width: 8),
 
@@ -295,6 +297,7 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
           // Clear Button
           if (_searchController.text.isNotEmpty) ...[
             InkWell(
+              mouseCursor: SystemMouseCursors.click,
               onTap: () {
                 _searchController.clear();
                 ref.read(globalSearchQueryProvider.notifier).state = '';
@@ -319,9 +322,7 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
           Container(
             width: 1,
             height: 14,
-            color: isDark
-                ? AppColors.darkBorder
-                : AppColors.lightBorder,
+            color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
           ),
           const SizedBox(width: 4),
 
@@ -337,7 +338,8 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
                   ? AppColors.textSecondaryDark
                   : AppColors.textSecondaryLight,
             ),
-            tooltip: widget.currentRoute == '/' ? 'New List' : 'Search & Add Media',
+            tooltip:
+                widget.currentRoute == '/' ? 'New List' : 'Search & Add Media',
             onPressed: () {
               if (widget.currentRoute == '/') {
                 CollectionEditorDialog.show(context);
@@ -359,9 +361,8 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
             icon: Icon(
               Icons.grid_view_rounded,
               size: 15,
-              color: isDark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
+              color:
+                  isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
             ),
             tooltip: 'Home Library',
             onPressed: () {
@@ -383,10 +384,9 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // '...' More Options Menu (Readest style)
-        PopupMenuButton<String>(
-          popUpAnimationStyle: AnimationStyle.noAnimation,
-          padding: EdgeInsets.zero,
+        // '...' Page & View Options Menu (Readest style)
+        IconButton(
+          key: _viewOptionsKey,
           icon: Icon(
             Icons.more_horiz,
             size: 18,
@@ -394,48 +394,38 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
                 ? AppColors.textSecondaryDark
                 : AppColors.textSecondaryLight,
           ),
-          tooltip: 'More options',
-          onSelected: (val) {
-            if (val == 'settings') {
-              context.go('/settings');
-            } else if (val == 'toggle_theme') {
-              final current = ref.read(settingsProvider).themeMode;
-              ref.read(settingsProvider.notifier).setThemeMode(
-                    current == ThemeMode.dark
-                        ? ThemeMode.light
-                        : ThemeMode.dark,
-                  );
+          tooltip: 'View options',
+          onPressed: () {
+            final isAllListsPage =
+                widget.currentRoute == '/' || widget.currentRoute == '/home';
+
+            String? activeCollectionId;
+            if (widget.currentRoute.startsWith('/collection/')) {
+              activeCollectionId = widget.currentRoute
+                  .substring('/collection/'.length)
+                  .split('?')
+                  .first;
             }
+
+            final collections = ref.read(collectionsStreamProvider).value ?? [];
+            final currentCollection = activeCollectionId != null
+                ? collections
+                    .where((c) => c.id == activeCollectionId)
+                    .firstOrNull
+                : null;
+
+            ViewOptionsMenu.show(
+              context: context,
+              anchorKey: _viewOptionsKey,
+              currentCollection: currentCollection,
+              isAllListsPage: isAllListsPage,
+            );
           },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: [
-                  Icon(Icons.settings_outlined, size: 16),
-                  SizedBox(width: 8),
-                  Text('Settings & Preferences'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'toggle_theme',
-              child: Row(
-                children: [
-                  Icon(
-                    isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'),
-                ],
-              ),
-            ),
-          ],
         ),
 
-        // Quick Global Search button
+        // '≡' App Menu (Settings, Theme, Navigation)
         IconButton(
+          key: _appMenuKey,
           icon: Icon(
             Icons.menu,
             size: 18,
@@ -443,8 +433,45 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
                 ? AppColors.textSecondaryDark
                 : AppColors.textSecondaryLight,
           ),
-          tooltip: 'All Collections',
-          onPressed: () => context.go('/'),
+          tooltip: 'App menu',
+          onPressed: () async {
+            final currentTheme = ref.read(settingsProvider).themeMode;
+            final isDarkMode = currentTheme == ThemeMode.dark;
+
+            final selected = await ElegantPopupMenu.show<String>(
+              context: context,
+              anchorKey: _appMenuKey,
+              items: [
+                const ElegantMenuItem(
+                  value: 'settings',
+                  label: 'Settings',
+                  icon: Icons.settings_outlined,
+                ),
+                ElegantMenuItem(
+                  value: 'toggle_theme',
+                  label: isDarkMode ? 'Light Mode' : 'Dark Mode',
+                  icon: isDarkMode
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined,
+                ),
+                const ElegantMenuItem(
+                  value: 'all_lists',
+                  label: 'All Lists',
+                  icon: Icons.grid_view_rounded,
+                ),
+              ],
+            );
+
+            if (selected == 'settings') {
+              if (context.mounted) context.go('/settings');
+            } else if (selected == 'toggle_theme') {
+              await ref.read(settingsProvider.notifier).setThemeMode(
+                    isDarkMode ? ThemeMode.light : ThemeMode.dark,
+                  );
+            } else if (selected == 'all_lists') {
+              if (context.mounted) context.go('/');
+            }
+          },
         ),
 
         if (isDesktopPlatform) ...[
@@ -507,6 +534,7 @@ class _DesktopLayoutState extends ConsumerState<DesktopLayout>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
+          mouseCursor: SystemMouseCursors.click,
           onTap: onPressed,
           borderRadius: BorderRadius.circular(4),
           hoverColor: isClose

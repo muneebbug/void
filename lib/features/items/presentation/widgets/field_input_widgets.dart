@@ -196,6 +196,7 @@ class DynamicFieldInput extends StatelessWidget {
     final dateVal = value is DateValue ? (value as DateValue).value : null;
 
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: () async {
         final picked = await showDatePicker(
           context: context,
@@ -230,6 +231,7 @@ class DynamicFieldInput extends StatelessWidget {
         value is DateTimeValue ? (value as DateTimeValue).value : null;
 
     return InkWell(
+      mouseCursor: SystemMouseCursors.click,
       onTap: () async {
         final pickedDate = await showDatePicker(
           context: context,

@@ -11,8 +11,11 @@ import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/items/presentation/providers/item_providers.dart';
 import 'package:void_app/features/items/presentation/widgets/item_card.dart';
 import 'package:void_app/features/items/presentation/widgets/item_detail_view.dart';
+import 'package:void_app/features/items/presentation/widgets/item_list_tile.dart';
 import 'package:void_app/features/media_search/presentation/widgets/media_search_dialog.dart';
 import 'package:void_app/features/search/presentation/providers/search_provider.dart';
+import 'package:void_app/features/settings/domain/app_settings.dart';
+import 'package:void_app/features/settings/presentation/providers/settings_provider.dart';
 import 'package:void_app/shared/widgets/confirm_dialog.dart';
 import 'package:void_app/shared/widgets/empty_state.dart';
 
@@ -35,6 +38,8 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
         ref.watch(collectionItemsProvider(widget.collectionId));
     final searchQuery =
         ref.watch(globalSearchQueryProvider).trim().toLowerCase();
+    final settings = ref.watch(settingsProvider);
+    final isListMode = settings.defaultViewMode == ItemViewMode.list;
 
     return Scaffold(
       backgroundColor:
@@ -54,7 +59,7 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
               // Readest Breadcrumb Header (All > Collection Name)
               _buildBreadcrumbHeader(context, collection, isDark),
 
-              // Items Grid with AddActionCard at end
+              // Items View (Grid or List)
               Expanded(
                 child: itemsAsync.when(
                   data: (items) {
@@ -81,9 +86,57 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
                     return LayoutBuilder(
                       builder: (context, constraints) {
                         final width = constraints.maxWidth;
-                        final crossAxisCount =
-                            (width / 165).floor().clamp(2, 10);
+                        final crossAxisCount = settings.gridColumns ??
+                            (width / 165).floor().clamp(3, 12);
 
+                        // Exact dynamic aspect ratio to fit 2:3 card + 50px text
+                        const horizontalPadding = 48.0;
+                        final totalSpacing = (crossAxisCount - 1) * 18.0;
+                        final columnWidth =
+                            (width - horizontalPadding - totalSpacing) /
+                                crossAxisCount;
+                        final boxHeight = columnWidth * 1.5;
+                        const textSectionHeight = 50.0;
+                        final totalCardHeight = boxHeight + textSectionHeight;
+                        final childAspectRatio =
+                            (columnWidth / totalCardHeight).clamp(0.35, 0.75);
+
+                        if (isListMode) {
+                          if (filteredItems.isEmpty && !isSearching) {
+                            return const EmptyState(
+                              icon: Icons.bookmark_border_rounded,
+                              title: 'No Items in Collection',
+                              description:
+                                  'Click + in the top bar to add items to this collection.',
+                            );
+                          }
+
+                          return CustomScrollView(
+                            slivers: [
+                              SliverList(
+                                delegate: SliverChildBuilderDelegate(
+                                  (context, index) {
+                                    final item = filteredItems[index];
+                                    return ItemListTile(
+                                      item: item,
+                                      onTap: () =>
+                                          _openItemDetail(context, item),
+                                      onEdit: () =>
+                                          _openItemDetail(context, item),
+                                      onDelete: () => _deleteItem(item),
+                                    );
+                                  },
+                                  childCount: filteredItems.length,
+                                ),
+                              ),
+                              const SliverToBoxAdapter(
+                                child: SizedBox(height: 40),
+                              ),
+                            ],
+                          );
+                        }
+
+                        // Grid View
                         return CustomScrollView(
                           slivers: [
                             SliverPadding(
@@ -95,11 +148,10 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
                                   crossAxisCount: crossAxisCount,
                                   crossAxisSpacing: 18,
                                   mainAxisSpacing: 20,
-                                  childAspectRatio: 2 / 3.7,
+                                  childAspectRatio: childAspectRatio,
                                 ),
                                 delegate: SliverChildBuilderDelegate(
                                   (context, index) {
-                                    // 1. Items in this collection
                                     if (index < filteredItems.length) {
                                       final item = filteredItems[index];
                                       return ItemCard(
@@ -108,28 +160,11 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
                                             _openItemDetail(context, item),
                                         onEdit: () =>
                                             _openItemDetail(context, item),
-                                        onDelete: () async {
-                                          final confirmed =
-                                              await ConfirmDialog.show(
-                                            context,
-                                            title: 'Delete Item',
-                                            message:
-                                                'Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.',
-                                            confirmLabel: 'Delete',
-                                            isDestructive: true,
-                                          );
-                                          if (confirmed) {
-                                            final repo =
-                                                ref.read<ItemRepository>(
-                                              itemRepositoryProvider,
-                                            );
-                                            await repo.deleteItem(item.id);
-                                          }
-                                        },
+                                        onDelete: () => _deleteItem(item),
                                       );
                                     }
 
-                                    // 2. The '+' Add Action Card -> Directly opens API Search Popup
+                                    // '+' Add Action Card -> Opens Media Search Dialog
                                     return AddActionCard(
                                       onTap: () => MediaSearchDialog.show(
                                         context,
@@ -169,6 +204,21 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
     );
   }
 
+  Future<void> _deleteItem(Item item) async {
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Delete Item',
+      message:
+          'Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
+    );
+    if (confirmed) {
+      final repo = ref.read<ItemRepository>(itemRepositoryProvider);
+      await repo.deleteItem(item.id);
+    }
+  }
+
   Widget _buildBreadcrumbHeader(
     BuildContext context,
     Collection collection,
@@ -180,6 +230,7 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
         children: [
           // 'All' link back to home
           InkWell(
+            mouseCursor: SystemMouseCursors.click,
             onTap: () => context.go('/'),
             borderRadius: BorderRadius.circular(4),
             child: Padding(
@@ -215,8 +266,8 @@ class _CollectionViewState extends ConsumerState<CollectionView> {
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: isDark
-                  ? AppColors.textPrimaryDark
-                  : AppColors.textPrimaryLight,
+                ? AppColors.textPrimaryDark
+                : AppColors.textPrimaryLight,
             ),
           ),
         ],

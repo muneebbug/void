@@ -3,6 +3,7 @@ import 'package:void_app/core/theme/app_colors.dart';
 import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/features/items/domain/field_value.dart';
 import 'package:void_app/features/items/domain/item.dart';
+import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
 
 class ItemCard extends StatefulWidget {
   final Item item;
@@ -27,42 +28,25 @@ class ItemCard extends StatefulWidget {
 class _ItemCardState extends State<ItemCard> {
   bool _isHovered = false;
   bool _isMenuOpen = false;
+  final GlobalKey _menuKey = GlobalKey();
 
-  void _showContextMenu(BuildContext context, Offset position) async {
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
-    if (overlay == null) return;
-
-    final localPosition = overlay.globalToLocal(position);
-
+  Future<void> _showMenu({Offset? tapPosition}) async {
     setState(() => _isMenuOpen = true);
-    final selected = await showMenu<String>(
+    final selected = await ElegantPopupMenu.show<String>(
       context: context,
-      popUpAnimationStyle: AnimationStyle.noAnimation,
-      position: RelativeRect.fromRect(
-        Rect.fromLTWH(localPosition.dx, localPosition.dy, 0, 0),
-        Offset.zero & overlay.size,
-      ),
+      anchorKey: tapPosition == null ? _menuKey : null,
+      position: tapPosition,
       items: [
-        const PopupMenuItem(
+        const ElegantMenuItem(
           value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit_outlined, size: 15),
-              SizedBox(width: 8),
-              Text('Edit Item'),
-            ],
-          ),
+          label: 'Edit Item',
+          icon: Icons.edit_outlined,
         ),
-        const PopupMenuItem(
+        const ElegantMenuItem(
           value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline, size: 15, color: AppColors.error),
-              SizedBox(width: 8),
-              Text('Delete Item', style: TextStyle(color: AppColors.error)),
-            ],
-          ),
+          label: 'Delete Item',
+          icon: Icons.delete_outline_rounded,
+          isDestructive: true,
         ),
       ],
     );
@@ -110,7 +94,7 @@ class _ItemCardState extends State<ItemCard> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         onSecondaryTapDown: (details) =>
-            _showContextMenu(context, details.globalPosition),
+            _showMenu(tapPosition: details.globalPosition),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -135,30 +119,67 @@ class _ItemCardState extends State<ItemCard> {
                                 : AppColors.lightBorder)),
                     width: widget.isSelected ? 1.8 : 1,
                   ),
-                  boxShadow: isVisible
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ]
-                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark
+                            ? (_isHovered ? 0.4 : 0.18)
+                            : (_isHovered ? 0.12 : 0.04),
+                      ),
+                      blurRadius: _isHovered ? 12 : 6,
+                      offset: Offset(0, _isHovered ? 5 : 2),
+                    ),
+                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
+                    // Cover Image or Default Icon
                     if (widget.item.coverImage != null &&
                         widget.item.coverImage!.isNotEmpty)
                       Image.network(
                         widget.item.coverImage!,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
+                        errorBuilder: (context, error, stackTrace) =>
                             _buildFallbackBanner(isDark),
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            color: isDark
+                                ? const Color(0xFF1E232E)
+                                : const Color(0xFFE2E8F0),
+                            child: const Center(
+                              child: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
                       )
                     else
                       _buildFallbackBanner(isDark),
+
+                    // Subtle Bottom Vignette on Hover
+                    if (isVisible)
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.3),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
 
                     // Rating Star Pill
                     if (rating > 0)
@@ -207,62 +228,22 @@ class _ItemCardState extends State<ItemCard> {
                           opacity: isVisible ? 1.0 : 0.0,
                           child: Material(
                             color: Colors.transparent,
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.75),
-                                shape: BoxShape.circle,
-                              ),
-                              child: PopupMenuButton<String>(
-                                popUpAnimationStyle: AnimationStyle.noAnimation,
-                                padding: EdgeInsets.zero,
-                                iconSize: 14,
-                                icon: const Icon(
+                            child: InkWell(
+                              key: _menuKey,
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: _showMenu,
+                              child: Container(
+                                width: 26,
+                                height: 26,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.75),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
                                   Icons.more_horiz,
                                   color: Colors.white,
                                   size: 16,
                                 ),
-                                onOpened: () =>
-                                    setState(() => _isMenuOpen = true),
-                                onCanceled: () =>
-                                    setState(() => _isMenuOpen = false),
-                                onSelected: (val) {
-                                  setState(() => _isMenuOpen = false);
-                                  if (val == 'edit') widget.onEdit();
-                                  if (val == 'delete') widget.onDelete();
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit_outlined, size: 15),
-                                        SizedBox(width: 8),
-                                        Text('Edit Item'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete_outline,
-                                          size: 15,
-                                          color: AppColors.error,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Delete Item',
-                                          style: TextStyle(
-                                            color: AppColors.error,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),
@@ -393,14 +374,19 @@ class _AddActionCardState extends State<AddActionCard> {
             ),
             const SizedBox(height: 8),
             // Placeholder invisible spacing to align with other cards
-            const Text(
+            Text(
               '',
-              style: TextStyle(fontSize: 13, height: 1.2),
+              style: AppTypography.titleSmall.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
             const SizedBox(height: 2),
-            const Text(
+            Text(
               '',
-              style: TextStyle(fontSize: 11.5, height: 1.2),
+              style: AppTypography.labelSmall.copyWith(
+                fontSize: 11,
+              ),
             ),
           ],
         ),

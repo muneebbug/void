@@ -60,6 +60,7 @@ class BadgePill extends StatelessWidget {
 
     if (onTap != null) {
       return InkWell(
+        mouseCursor: SystemMouseCursors.click,
         onTap: onTap,
         borderRadius: BorderRadius.circular(6),
         child: content,

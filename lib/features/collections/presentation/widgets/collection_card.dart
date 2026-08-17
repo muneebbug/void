@@ -4,6 +4,7 @@ import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/core/utils/schema_display_helper.dart';
 import 'package:void_app/features/collections/domain/collection.dart';
 import 'package:void_app/features/items/domain/item.dart';
+import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
 
 class CollectionCard extends StatefulWidget {
   final Collection collection;
@@ -28,55 +29,31 @@ class CollectionCard extends StatefulWidget {
 class _CollectionCardState extends State<CollectionCard> {
   bool _isHovered = false;
   bool _isMenuOpen = false;
+  final GlobalKey _menuKey = GlobalKey();
 
-  void _showContextMenu(BuildContext context, Offset position) async {
-    final overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
-    if (overlay == null) return;
-
-    final localPosition = overlay.globalToLocal(position);
-
+  Future<void> _showMenu({Offset? tapPosition}) async {
     setState(() => _isMenuOpen = true);
-    final selected = await showMenu<String>(
+    final selected = await ElegantPopupMenu.show<String>(
       context: context,
-      popUpAnimationStyle: AnimationStyle.noAnimation,
-      position: RelativeRect.fromRect(
-        Rect.fromLTWH(localPosition.dx, localPosition.dy, 0, 0),
-        Offset.zero & overlay.size,
-      ),
+      anchorKey: tapPosition == null ? _menuKey : null,
+      position: tapPosition,
       items: [
-        const PopupMenuItem(
+        const ElegantMenuItem(
           value: 'edit',
-          child: Row(
-            children: [
-              Icon(Icons.edit_outlined, size: 15),
-              SizedBox(width: 8),
-              Text('Edit Collection'),
-            ],
-          ),
+          label: 'Edit Collection',
+          icon: Icons.edit_outlined,
         ),
-        const PopupMenuItem(
+        const ElegantMenuItem(
           value: 'delete',
-          child: Row(
-            children: [
-              Icon(
-                Icons.delete_outline,
-                size: 15,
-                color: AppColors.error,
-              ),
-              SizedBox(width: 8),
-              Text(
-                'Delete Collection',
-                style: TextStyle(color: AppColors.error),
-              ),
-            ],
-          ),
+          label: 'Delete Collection',
+          icon: Icons.delete_outline_rounded,
+          isDestructive: true,
         ),
       ],
     );
-
-    if (mounted) setState(() => _isMenuOpen = false);
-
+    if (mounted) {
+      setState(() => _isMenuOpen = false);
+    }
     if (selected == 'edit') widget.onEdit();
     if (selected == 'delete') widget.onDelete();
   }
@@ -84,7 +61,6 @@ class _CollectionCardState extends State<CollectionCard> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final count = widget.collection.itemCount;
     final isVisible = _isHovered || _isMenuOpen;
 
     return MouseRegion(
@@ -95,12 +71,12 @@ class _CollectionCardState extends State<CollectionCard> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         onSecondaryTapDown: (details) =>
-            _showContextMenu(context, details.globalPosition),
+            _showMenu(tapPosition: details.globalPosition),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 2:3 Aspect Ratio Card with 2x2 Collage
+            // Standard 2:3 Aspect Ratio Card Box (matches ItemCard & AddActionCard)
             AspectRatio(
               aspectRatio: 2 / 3,
               child: AnimatedContainer(
@@ -118,24 +94,43 @@ class _CollectionCardState extends State<CollectionCard> {
                             : AppColors.lightBorder),
                     width: 1,
                   ),
-                  boxShadow: isVisible
-                      ? [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ]
-                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(
+                        alpha: isDark
+                            ? (_isHovered ? 0.4 : 0.18)
+                            : (_isHovered ? 0.12 : 0.04),
+                      ),
+                      blurRadius: _isHovered ? 12 : 6,
+                      offset: Offset(0, _isHovered ? 5 : 2),
+                    ),
+                  ],
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Collage Content
+                    // Collage Content (fills the entire 2:3 container)
                     _buildCollageContent(isDark),
 
-                    // Context Menu Overlay Button (always in tree to avoid unmounting on hover exit)
+                    // Subtle Bottom Vignette on Hover
+                    if (isVisible)
+                      Positioned.fill(
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.3),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+
+                    // Context Menu Overlay Button
                     Positioned(
                       top: 6,
                       right: 6,
@@ -146,61 +141,22 @@ class _CollectionCardState extends State<CollectionCard> {
                           opacity: isVisible ? 1.0 : 0.0,
                           child: Material(
                             color: Colors.transparent,
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                color: Colors.black.withValues(alpha: 0.75),
-                                shape: BoxShape.circle,
-                              ),
-                              child: PopupMenuButton<String>(
-                                popUpAnimationStyle: AnimationStyle.noAnimation,
-                                padding: EdgeInsets.zero,
-                                iconSize: 14,
-                                icon: const Icon(
+                            child: InkWell(
+                              key: _menuKey,
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: _showMenu,
+                              child: Container(
+                                width: 26,
+                                height: 26,
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.75),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: const Icon(
                                   Icons.more_horiz,
                                   color: Colors.white,
                                   size: 16,
                                 ),
-                                onOpened: () =>
-                                    setState(() => _isMenuOpen = true),
-                                onCanceled: () =>
-                                    setState(() => _isMenuOpen = false),
-                                onSelected: (val) {
-                                  setState(() => _isMenuOpen = false);
-                                  if (val == 'edit') widget.onEdit();
-                                  if (val == 'delete') widget.onDelete();
-                                },
-                                itemBuilder: (context) => [
-                                  const PopupMenuItem(
-                                    value: 'edit',
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.edit_outlined, size: 15),
-                                        SizedBox(width: 8),
-                                        Text('Edit Collection'),
-                                      ],
-                                    ),
-                                  ),
-                                  const PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        Icon(
-                                          Icons.delete_outline,
-                                          size: 15,
-                                          color: AppColors.error,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Delete Collection',
-                                          style:
-                                              TextStyle(color: AppColors.error),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
                               ),
                             ),
                           ),
@@ -211,9 +167,10 @@ class _CollectionCardState extends State<CollectionCard> {
                 ),
               ),
             ),
+
             const SizedBox(height: 8),
 
-            // Typography below card (Readest style)
+            // Collection Title
             Text(
               widget.collection.name,
               style: AppTypography.titleSmall.copyWith(
@@ -227,12 +184,14 @@ class _CollectionCardState extends State<CollectionCard> {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 2),
+            // Item Count
             Text(
-              count == 1 ? '1 item' : '$count items',
-              style: AppTypography.bodySmall.copyWith(
-                fontSize: 11.5,
-                color:
-                    isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+              '${widget.previewItems.length} ${widget.previewItems.length == 1 ? "item" : "items"}',
+              style: AppTypography.labelSmall.copyWith(
+                fontSize: 11,
+                color: isDark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -245,38 +204,100 @@ class _CollectionCardState extends State<CollectionCard> {
 
   Widget _buildCollageContent(bool isDark) {
     final validCovers = widget.previewItems
-        .where((i) => i.coverImage != null && i.coverImage!.isNotEmpty)
-        .map((i) => i.coverImage!)
+        .map((i) => i.coverImage)
+        .where((c) => c != null && c.trim().isNotEmpty)
+        .cast<String>()
+        .take(4)
         .toList();
 
-    // Always 4-split (2x2 grid) filled based on items in the list
+    // If 0 covers: Show clean schema category icon
+    if (validCovers.isEmpty) {
+      final accentColor = SchemaDisplayHelper.getAccentColor(
+        widget.collection.schemaId,
+        isDark: isDark,
+      );
+      final icon = SchemaDisplayHelper.getIcon(
+        widget.collection.icon,
+        widget.collection.schemaId,
+      );
+
+      return Container(
+        color: isDark
+            ? AppColors.darkSurface.withValues(alpha: 0.6)
+            : AppColors.lightSurface.withValues(alpha: 0.8),
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: accentColor.withValues(alpha: isDark ? 0.14 : 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 30, color: accentColor),
+          ),
+        ),
+      );
+    }
+
+    // If 1 cover: Full 2:3 cover fill
+    if (validCovers.length == 1) {
+      return _buildImageTile(validCovers[0], isDark);
+    }
+
+    // If 2 covers: 2 vertical halves
+    if (validCovers.length == 2) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: _buildImageTile(validCovers[0], isDark)),
+          const SizedBox(width: 1.5),
+          Expanded(child: _buildImageTile(validCovers[1], isDark)),
+        ],
+      );
+    }
+
+    // If 3 covers: Left half (1 large cover) + Right half (2 stacked covers)
+    if (validCovers.length == 3) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: _buildImageTile(validCovers[0], isDark)),
+          const SizedBox(width: 1.5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: _buildImageTile(validCovers[1], isDark)),
+                const SizedBox(height: 1.5),
+                Expanded(child: _buildImageTile(validCovers[2], isDark)),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    // If 4 covers: Clean 2x2 grid completely filling the 2:3 card area
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: _buildCoverTile(validCovers, 0, isDark)),
-              Container(
-                width: 1,
-                color: isDark ? const Color(0xFF1F1F24) : const Color(0xFFE2E8F0),
-              ),
-              Expanded(child: _buildCoverTile(validCovers, 1, isDark)),
+              Expanded(child: _buildImageTile(validCovers[0], isDark)),
+              const SizedBox(width: 1.5),
+              Expanded(child: _buildImageTile(validCovers[1], isDark)),
             ],
           ),
         ),
-        Container(
-          height: 1,
-          color: isDark ? const Color(0xFF1F1F24) : const Color(0xFFE2E8F0),
-        ),
+        const SizedBox(height: 1.5),
         Expanded(
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(child: _buildCoverTile(validCovers, 2, isDark)),
-              Container(
-                width: 1,
-                color: isDark ? const Color(0xFF1F1F24) : const Color(0xFFE2E8F0),
-              ),
-              Expanded(child: _buildCoverTile(validCovers, 3, isDark)),
+              Expanded(child: _buildImageTile(validCovers[2], isDark)),
+              const SizedBox(width: 1.5),
+              Expanded(child: _buildImageTile(validCovers[3], isDark)),
             ],
           ),
         ),
@@ -284,35 +305,46 @@ class _CollectionCardState extends State<CollectionCard> {
     );
   }
 
-  Widget _buildCoverTile(List<String> covers, int index, bool isDark) {
-    if (index < covers.length) {
-      return Image.network(
-        covers[index],
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildPlaceholderTile(isDark),
-      );
-    }
-    return _buildPlaceholderTile(isDark);
-  }
-
-  Widget _buildPlaceholderTile(bool isDark) {
+  Widget _buildImageTile(String imageUrl, bool isDark) {
     return Container(
-      color: isDark ? const Color(0xFF141418) : const Color(0xFFF1F5F9),
-      child: Center(
-        child: Icon(
-          _getCategoryIcon(widget.collection.schemaId),
-          size: 16,
-          color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.black.withValues(alpha: 0.08),
-        ),
+      color: isDark ? const Color(0xFF1E232E) : const Color(0xFFE2E8F0),
+      child: Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (_, __, ___) => _buildFallbackTile(isDark),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: isDark ? const Color(0xFF1E232E) : const Color(0xFFE2E8F0),
+            child: const Center(
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 1.5),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
-
-
-  IconData _getCategoryIcon(String schemaId) {
-    return SchemaDisplayHelper.getIcon(widget.collection.icon, schemaId);
+  Widget _buildFallbackTile(bool isDark) {
+    return Container(
+      color: isDark
+          ? const Color(0xFF1E232E)
+          : const Color(0xFFE2E8F0).withValues(alpha: 0.5),
+      child: Center(
+        child: Icon(
+          Icons.insert_drive_file_outlined,
+          size: 16,
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.12)
+              : Colors.black.withValues(alpha: 0.12),
+        ),
+      ),
+    );
   }
 }

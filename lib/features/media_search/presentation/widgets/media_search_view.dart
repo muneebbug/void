@@ -289,6 +289,7 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
               : (isDark ? AppColors.darkCard : AppColors.lightCard),
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
+            mouseCursor: SystemMouseCursors.click,
             borderRadius: BorderRadius.circular(8),
             onTap: () {
               setState(() => _selectedCandidate = candidate);

@@ -5,15 +5,20 @@ import 'package:void_app/app/app_providers.dart';
 import 'package:void_app/core/theme/app_colors.dart';
 import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/features/collections/data/collection_repository.dart';
+import 'package:void_app/features/collections/domain/collection.dart';
 import 'package:void_app/features/collections/presentation/providers/collection_providers.dart';
 import 'package:void_app/features/collections/presentation/widgets/collection_card.dart';
 import 'package:void_app/features/collections/presentation/widgets/collection_editor_dialog.dart';
+import 'package:void_app/features/collections/presentation/widgets/collection_list_tile.dart';
 import 'package:void_app/features/items/data/item_repository.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/items/presentation/providers/item_providers.dart';
 import 'package:void_app/features/items/presentation/widgets/item_card.dart';
 import 'package:void_app/features/items/presentation/widgets/item_detail_view.dart';
+import 'package:void_app/features/items/presentation/widgets/item_list_tile.dart';
 import 'package:void_app/features/search/presentation/providers/search_provider.dart';
+import 'package:void_app/features/settings/domain/app_settings.dart';
+import 'package:void_app/features/settings/presentation/providers/settings_provider.dart';
 import 'package:void_app/shared/widgets/confirm_dialog.dart';
 import 'package:void_app/shared/widgets/empty_state.dart';
 
@@ -32,6 +37,8 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
     final allItemsAsync = ref.watch(allItemsStreamProvider);
     final searchQuery =
         ref.watch(globalSearchQueryProvider).trim().toLowerCase();
+    final settings = ref.watch(settingsProvider);
+    final isListMode = settings.defaultViewMode == ItemViewMode.list;
 
     return Scaffold(
       backgroundColor:
@@ -40,7 +47,7 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
         data: (collections) {
           final allItems = allItemsAsync.value ?? [];
 
-          // Group preview items per collection for 2x2 collage
+          // Group preview items per collection for collage
           final Map<String, List<Item>> itemsByCollection = {};
           for (final item in allItems) {
             if (item.collectionId != null) {
@@ -78,9 +85,20 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
 
           return LayoutBuilder(
             builder: (context, constraints) {
-              // Calculate responsive grid columns (matching Readest ~140-180px card width)
               final width = constraints.maxWidth;
-              final crossAxisCount = (width / 165).floor().clamp(2, 10);
+              final crossAxisCount = settings.gridColumns ??
+                  (width / 165).floor().clamp(3, 12);
+
+              // Mathematically exact child aspect ratio based on card width (2:3 box + 50px text)
+              const horizontalPadding = 48.0; // 24 left + 24 right
+              final totalSpacing = (crossAxisCount - 1) * 18.0;
+              final columnWidth =
+                  (width - horizontalPadding - totalSpacing) / crossAxisCount;
+              final boxHeight = columnWidth * 1.5; // 2:3 ratio
+              const textSectionHeight = 50.0;
+              final totalCardHeight = boxHeight + textSectionHeight;
+              final childAspectRatio =
+                  (columnWidth / totalCardHeight).clamp(0.35, 0.75);
 
               if (isSearching) {
                 return CustomScrollView(
@@ -102,57 +120,59 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
                           ),
                         ),
                       ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: 18,
-                            mainAxisSpacing: 20,
-                            childAspectRatio: 2 / 3.7,
-                          ),
+                      if (isListMode)
+                        SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final col = matchingCollections[index];
                               final previewItems =
                                   itemsByCollection[col.id] ?? [];
-
-                              return CollectionCard(
+                              return CollectionListTile(
                                 collection: col,
                                 previewItems: previewItems,
-                                onTap: () {
-                                  ref
-                                      .read(selectedCollectionIdProvider.notifier)
-                                      .state = col.id;
-                                  context.go('/collection/${col.id}');
-                                },
+                                onTap: () => _openCollection(col),
                                 onEdit: () => CollectionEditorDialog.show(
                                   context,
                                   collection: col,
                                 ),
-                                onDelete: () async {
-                                  final confirmed = await ConfirmDialog.show(
-                                    context,
-                                    title: 'Delete Collection',
-                                    message:
-                                        'Are you sure you want to permanently delete "${col.name}" and all its items? This action cannot be undone.',
-                                    confirmLabel: 'Delete',
-                                    isDestructive: true,
-                                  );
-                                  if (confirmed) {
-                                    final repo = ref.read<CollectionRepository>(
-                                      collectionRepositoryProvider,
-                                    );
-                                    await repo.deleteCollection(col.id);
-                                  }
-                                },
+                                onDelete: () => _deleteCollection(col),
                               );
                             },
                             childCount: matchingCollections.length,
                           ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: 18,
+                              mainAxisSpacing: 20,
+                              childAspectRatio: childAspectRatio,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final col = matchingCollections[index];
+                                final previewItems =
+                                    itemsByCollection[col.id] ?? [];
+
+                                return CollectionCard(
+                                  collection: col,
+                                  previewItems: previewItems,
+                                  onTap: () => _openCollection(col),
+                                  onEdit: () => CollectionEditorDialog.show(
+                                    context,
+                                    collection: col,
+                                  ),
+                                  onDelete: () => _deleteCollection(col),
+                                );
+                              },
+                              childCount: matchingCollections.length,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                     if (matchingItems.isNotEmpty) ...[
                       SliverToBoxAdapter(
@@ -171,51 +191,89 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
                           ),
                         ),
                       ),
-                      SliverPadding(
-                        padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
-                        sliver: SliverGrid(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: crossAxisCount,
-                            crossAxisSpacing: 18,
-                            mainAxisSpacing: 20,
-                            childAspectRatio: 2 / 3.7,
-                          ),
+                      if (isListMode)
+                        SliverList(
                           delegate: SliverChildBuilderDelegate(
                             (context, index) {
                               final item = matchingItems[index];
-                              return ItemCard(
+                              return ItemListTile(
                                 item: item,
                                 onTap: () => _openItemDetail(context, item),
                                 onEdit: () => _openItemDetail(context, item),
-                                onDelete: () async {
-                                  final confirmed = await ConfirmDialog.show(
-                                    context,
-                                    title: 'Delete Item',
-                                    message:
-                                        'Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.',
-                                    confirmLabel: 'Delete',
-                                    isDestructive: true,
-                                  );
-                                  if (confirmed) {
-                                    final repo = ref.read<ItemRepository>(
-                                      itemRepositoryProvider,
-                                    );
-                                    await repo.deleteItem(item.id);
-                                  }
-                                },
+                                onDelete: () => _deleteItem(item),
                               );
                             },
                             childCount: matchingItems.length,
                           ),
+                        )
+                      else
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(24, 8, 24, 40),
+                          sliver: SliverGrid(
+                            gridDelegate:
+                                SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: crossAxisCount,
+                              crossAxisSpacing: 18,
+                              mainAxisSpacing: 20,
+                              childAspectRatio: childAspectRatio,
+                            ),
+                            delegate: SliverChildBuilderDelegate(
+                              (context, index) {
+                                final item = matchingItems[index];
+                                return ItemCard(
+                                  item: item,
+                                  onTap: () => _openItemDetail(context, item),
+                                  onEdit: () => _openItemDetail(context, item),
+                                  onDelete: () => _deleteItem(item),
+                                );
+                              },
+                              childCount: matchingItems.length,
+                            ),
+                          ),
                         ),
-                      ),
                     ],
                   ],
                 );
               }
 
-              // Normal library view when not searching
+              // Normal browsing (No Search)
+              if (isListMode) {
+                if (collections.isEmpty) {
+                  return const EmptyState(
+                    icon: Icons.folder_open_outlined,
+                    title: 'No Collections Yet',
+                    description: 'Click + in the top bar to create your first list.',
+                  );
+                }
+
+                return CustomScrollView(
+                  slivers: [
+                    SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final col = collections[index];
+                          final previewItems =
+                              itemsByCollection[col.id] ?? [];
+                          return CollectionListTile(
+                            collection: col,
+                            previewItems: previewItems,
+                            onTap: () => _openCollection(col),
+                            onEdit: () => CollectionEditorDialog.show(
+                              context,
+                              collection: col,
+                            ),
+                            onDelete: () => _deleteCollection(col),
+                          );
+                        },
+                        childCount: collections.length,
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                  ],
+                );
+              }
+
+              // Grid View
               return CustomScrollView(
                 slivers: [
                   SliverPadding(
@@ -225,11 +283,10 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 18,
                         mainAxisSpacing: 20,
-                        childAspectRatio: 2 / 3.7,
+                        childAspectRatio: childAspectRatio,
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {
-                          // 1. Collections (Folders with 2x2 cover collage)
                           if (index < collections.length) {
                             final col = collections[index];
                             final previewItems =
@@ -238,36 +295,15 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
                             return CollectionCard(
                               collection: col,
                               previewItems: previewItems,
-                              onTap: () {
-                                ref
-                                    .read(selectedCollectionIdProvider.notifier)
-                                    .state = col.id;
-                                context.go('/collection/${col.id}');
-                              },
+                              onTap: () => _openCollection(col),
                               onEdit: () => CollectionEditorDialog.show(
                                 context,
                                 collection: col,
                               ),
-                              onDelete: () async {
-                                final confirmed = await ConfirmDialog.show(
-                                  context,
-                                  title: 'Delete Collection',
-                                  message:
-                                      'Are you sure you want to permanently delete "${col.name}" and all its items? This action cannot be undone.',
-                                  confirmLabel: 'Delete',
-                                  isDestructive: true,
-                                );
-                                if (confirmed) {
-                                  final repo = ref.read<CollectionRepository>(
-                                    collectionRepositoryProvider,
-                                  );
-                                  await repo.deleteCollection(col.id);
-                                }
-                              },
+                              onDelete: () => _deleteCollection(col),
                             );
                           }
 
-                          // 2. The '+' Add Action Card - directly opens New List/Collection popup
                           return AddActionCard(
                             onTap: () => CollectionEditorDialog.show(context),
                           );
@@ -289,6 +325,43 @@ class _HomeListsViewState extends ConsumerState<HomeListsView> {
         ),
       ),
     );
+  }
+
+  void _openCollection(Collection col) {
+    ref.read(selectedCollectionIdProvider.notifier).state = col.id;
+    context.go('/collection/${col.id}');
+  }
+
+  Future<void> _deleteCollection(Collection col) async {
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Delete Collection',
+      message:
+          'Are you sure you want to permanently delete "${col.name}" and all its items? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
+    );
+    if (confirmed) {
+      final repo = ref.read<CollectionRepository>(
+        collectionRepositoryProvider,
+      );
+      await repo.deleteCollection(col.id);
+    }
+  }
+
+  Future<void> _deleteItem(Item item) async {
+    final confirmed = await ConfirmDialog.show(
+      context,
+      title: 'Delete Item',
+      message:
+          'Are you sure you want to permanently delete "${item.title}"? This action cannot be undone.',
+      confirmLabel: 'Delete',
+      isDestructive: true,
+    );
+    if (confirmed) {
+      final repo = ref.read<ItemRepository>(itemRepositoryProvider);
+      await repo.deleteItem(item.id);
+    }
   }
 
   void _openItemDetail(BuildContext context, Item item) {
