@@ -4,6 +4,7 @@ import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/core/utils/date_formatter.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/schemas/domain/schema.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class ItemTableView extends StatelessWidget {
   final List<Item> items;
@@ -76,12 +77,12 @@ class ItemTableView extends StatelessWidget {
                           item.coverImage!.isNotEmpty) ...[
                         ClipRRect(
                           borderRadius: BorderRadius.circular(4),
-                          child: Image.network(
-                            item.coverImage!,
+                          child: VoidImage(
+                            imageUrl: item.coverImage,
                             width: 24,
                             height: 24,
                             fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => const Icon(
+                            errorWidget: const Icon(
                               Icons.insert_drive_file_outlined,
                               size: 16,
                             ),

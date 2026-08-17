@@ -4,6 +4,7 @@ import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/features/items/domain/field_value.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class ItemCard extends StatefulWidget {
   final Item item;
@@ -136,33 +137,11 @@ class _ItemCardState extends State<ItemCard> {
                   fit: StackFit.expand,
                   children: [
                     // Cover Image or Default Icon
-                    if (widget.item.coverImage != null &&
-                        widget.item.coverImage!.isNotEmpty)
-                      Image.network(
-                        widget.item.coverImage!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            _buildFallbackBanner(isDark),
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            color: isDark
-                                ? const Color(0xFF1E232E)
-                                : const Color(0xFFE2E8F0),
-                            child: const Center(
-                              child: SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      )
-                    else
-                      _buildFallbackBanner(isDark),
+                    VoidImage(
+                      imageUrl: widget.item.coverImage,
+                      fit: BoxFit.cover,
+                      errorWidget: _buildFallbackBanner(isDark),
+                    ),
 
                     // Subtle Bottom Vignette on Hover
                     if (isVisible)

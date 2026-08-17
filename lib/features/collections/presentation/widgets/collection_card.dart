@@ -5,6 +5,7 @@ import 'package:void_app/core/utils/schema_display_helper.dart';
 import 'package:void_app/features/collections/domain/collection.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class CollectionCard extends StatefulWidget {
   final Collection collection;
@@ -308,25 +309,12 @@ class _CollectionCardState extends State<CollectionCard> {
   Widget _buildImageTile(String imageUrl, bool isDark) {
     return Container(
       color: isDark ? const Color(0xFF1E232E) : const Color(0xFFE2E8F0),
-      child: Image.network(
-        imageUrl,
+      child: VoidImage(
+        imageUrl: imageUrl,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (_, _, _) => _buildFallbackTile(isDark),
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            color: isDark ? const Color(0xFF1E232E) : const Color(0xFFE2E8F0),
-            child: const Center(
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 1.5),
-              ),
-            ),
-          );
-        },
+        errorWidget: _buildFallbackTile(isDark),
       ),
     );
   }

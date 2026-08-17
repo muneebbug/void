@@ -11,6 +11,7 @@ import 'package:void_app/features/items/presentation/widgets/item_editor_dialog.
 import 'package:void_app/features/schemas/presentation/providers/schema_providers.dart';
 import 'package:void_app/shared/widgets/badge_pill.dart';
 import 'package:void_app/shared/widgets/confirm_dialog.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class ItemDetailView extends ConsumerStatefulWidget {
   final String itemId;
@@ -171,15 +172,13 @@ class _ItemDetailViewState extends ConsumerState<ItemDetailView> {
                             ),
                           ),
                           clipBehavior: Clip.antiAlias,
-                          child: item.coverImage != null &&
-                                  item.coverImage!.isNotEmpty
-                              ? Image.network(
-                                  item.coverImage!,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) =>
-                                      _buildFallbackCover(isDark),
-                                )
-                              : _buildFallbackCover(isDark),
+                          child: VoidImage(
+                            imageUrl: item.coverImage,
+                            width: 130,
+                            height: 195,
+                            fit: BoxFit.cover,
+                            errorWidget: _buildFallbackCover(isDark),
+                          ),
                         ),
                         const SizedBox(width: 16),
 

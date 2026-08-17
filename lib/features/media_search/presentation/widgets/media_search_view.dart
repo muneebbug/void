@@ -9,6 +9,7 @@ import 'package:void_app/features/media_search/presentation/providers/media_sear
 import 'package:void_app/features/schemas/data/builtin_schemas.dart';
 import 'package:void_app/shared/widgets/badge_pill.dart';
 import 'package:void_app/shared/widgets/empty_state.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class MediaSearchView extends ConsumerStatefulWidget {
   final String collectionId;
@@ -310,30 +311,20 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
                   // Poster Thumbnail
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    child: candidate.coverUrl != null &&
-                            candidate.coverUrl!.isNotEmpty
-                        ? Image.network(
-                            candidate.coverUrl!,
-                            width: 36,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) => Container(
-                              width: 36,
-                              height: 50,
-                              color: isDark
-                                  ? const Color(0xFF1E232E)
-                                  : const Color(0xFFE2E8F0),
-                              child: const Icon(Icons.movie_outlined, size: 16),
-                            ),
-                          )
-                        : Container(
-                            width: 36,
-                            height: 50,
-                            color: isDark
-                                ? const Color(0xFF1E232E)
-                                : const Color(0xFFE2E8F0),
-                            child: const Icon(Icons.movie_outlined, size: 16),
-                          ),
+                    child: VoidImage(
+                      imageUrl: candidate.coverUrl,
+                      width: 36,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorWidget: Container(
+                        width: 36,
+                        height: 50,
+                        color: isDark
+                            ? const Color(0xFF1E232E)
+                            : const Color(0xFFE2E8F0),
+                        child: const Icon(Icons.movie_outlined, size: 16),
+                      ),
+                    ),
                   ),
                   const SizedBox(width: 12),
 
@@ -473,11 +464,11 @@ class _MediaSearchViewState extends ConsumerState<MediaSearchView> {
         if (candidate.coverUrl != null && candidate.coverUrl!.isNotEmpty)
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              candidate.coverUrl!,
+            child: VoidImage(
+              imageUrl: candidate.coverUrl!,
               height: 280,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
+              errorWidget: Container(
                 height: 280,
                 color:
                     isDark ? const Color(0xFF161A26) : const Color(0xFFE2E8F0),

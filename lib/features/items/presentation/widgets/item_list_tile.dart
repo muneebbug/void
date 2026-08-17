@@ -4,6 +4,7 @@ import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/features/items/domain/field_value.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class ItemListTile extends StatefulWidget {
   final Item item;
@@ -142,14 +143,13 @@ class _ItemListTileState extends State<ItemListTile> {
                   ),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: widget.item.coverImage != null &&
-                        widget.item.coverImage!.trim().isNotEmpty
-                    ? Image.network(
-                        widget.item.coverImage!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _buildFallbackCover(isDark),
-                      )
-                    : _buildFallbackCover(isDark),
+                child: VoidImage(
+                  imageUrl: widget.item.coverImage,
+                  width: 56,
+                  height: 84,
+                  fit: BoxFit.cover,
+                  errorWidget: _buildFallbackCover(isDark),
+                ),
               ),
 
               const SizedBox(width: 16),

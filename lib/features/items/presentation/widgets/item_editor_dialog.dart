@@ -12,6 +12,7 @@ import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/features/items/presentation/widgets/field_input_widgets.dart';
 import 'package:void_app/features/schemas/domain/schema.dart';
 import 'package:void_app/features/schemas/presentation/providers/schema_providers.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class ItemEditorDialog extends ConsumerStatefulWidget {
   final Item? item;
@@ -312,11 +313,12 @@ class _ItemEditorDialogState extends ConsumerState<ItemEditorDialog> {
             const SizedBox(height: 10),
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.network(
-                _coverImageController.text.trim(),
+              child: VoidImage(
+                imageUrl: _coverImageController.text.trim(),
                 height: 140,
+                width: double.infinity,
                 fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(
+                errorWidget: Container(
                   height: 140,
                   color: Colors.grey.withValues(alpha: 0.1),
                   child: const Center(

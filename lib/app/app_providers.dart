@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:void_app/core/database/app_database.dart';
+import 'package:void_app/core/services/local_image_cache_service.dart';
 import 'package:void_app/features/collections/data/collection_repository.dart';
 import 'package:void_app/features/items/data/item_repository.dart';
 import 'package:void_app/features/media_search/data/media_api_service.dart';
@@ -48,4 +49,8 @@ final mediaSyncServiceProvider = Provider<MediaSyncService>((ref) {
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
   return FileSettingsRepository();
+});
+
+final localImageCacheServiceProvider = Provider<LocalImageCacheService>((ref) {
+  return LocalImageCacheService.instance;
 });

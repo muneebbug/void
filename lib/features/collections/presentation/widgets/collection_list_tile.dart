@@ -5,6 +5,7 @@ import 'package:void_app/core/utils/schema_display_helper.dart';
 import 'package:void_app/features/collections/domain/collection.dart';
 import 'package:void_app/features/items/domain/item.dart';
 import 'package:void_app/shared/widgets/elegant_popup_menu.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class CollectionListTile extends StatefulWidget {
   final Collection collection;
@@ -262,10 +263,12 @@ class _CollectionListTileState extends State<CollectionListTile> {
         ),
       ),
       clipBehavior: Clip.antiAlias,
-      child: Image.network(
-        url,
+      child: VoidImage(
+        imageUrl: url,
+        width: width,
+        height: height,
         fit: BoxFit.cover,
-        errorBuilder: (_, _, _) => Center(
+        errorWidget: Center(
           child: Icon(
             Icons.insert_drive_file_outlined,
             size: 16,

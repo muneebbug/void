@@ -6,6 +6,7 @@ import 'package:void_app/features/collections/presentation/providers/collection_
 import 'package:void_app/features/media_search/presentation/providers/media_search_provider.dart';
 import 'package:void_app/features/schemas/data/builtin_schemas.dart';
 import 'package:void_app/shared/widgets/empty_state.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class MediaSearchDialog extends ConsumerStatefulWidget {
   final String collectionId;
@@ -246,14 +247,13 @@ class _MediaSearchDialogState extends ConsumerState<MediaSearchDialog> {
                 child: SizedBox(
                   width: 44,
                   height: 66,
-                  child: item.coverUrl != null && item.coverUrl!.isNotEmpty
-                      ? Image.network(
-                          item.coverUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) =>
-                              _buildCoverPlaceholder(isDark, schemaId),
-                        )
-                      : _buildCoverPlaceholder(isDark, schemaId),
+                  child: VoidImage(
+                    imageUrl: item.coverUrl,
+                    width: 44,
+                    height: 66,
+                    fit: BoxFit.cover,
+                    errorWidget: _buildCoverPlaceholder(isDark, schemaId),
+                  ),
                 ),
               ),
               const SizedBox(width: 14),

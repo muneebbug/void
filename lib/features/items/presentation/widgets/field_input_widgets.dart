@@ -6,6 +6,7 @@ import 'package:void_app/features/items/domain/field_value.dart';
 import 'package:void_app/features/schemas/domain/field_config.dart';
 import 'package:void_app/features/schemas/domain/field_type.dart';
 import 'package:void_app/features/schemas/domain/schema_field.dart';
+import 'package:void_app/shared/widgets/void_image.dart';
 
 class DynamicFieldInput extends StatelessWidget {
   final SchemaField field;
@@ -368,12 +369,12 @@ class DynamicFieldInput extends StatelessWidget {
           const SizedBox(height: 10),
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              imgUrl,
+            child: VoidImage(
+              imageUrl: imgUrl,
               height: 120,
               width: 120,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
+              errorWidget: Container(
                 height: 120,
                 width: 120,
                 color: Colors.grey.withValues(alpha: 0.2),

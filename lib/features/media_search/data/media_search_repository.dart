@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:void_app/core/services/local_image_cache_service.dart';
 import 'package:void_app/core/utils/id_generator.dart';
 import 'package:void_app/features/items/data/item_repository.dart';
 import 'package:void_app/features/items/domain/field_value.dart';
@@ -145,6 +147,9 @@ class DefaultMediaSearchRepository implements MediaSearchRepository {
     );
 
     await _itemRepository.createItem(item);
+    if (result.coverUrl != null && result.coverUrl!.isNotEmpty) {
+      unawaited(LocalImageCacheService.instance.preCache(result.coverUrl));
+    }
     return item;
   }
 }
