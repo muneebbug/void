@@ -75,7 +75,7 @@ class BuiltinSchemas {
             label: 'Rating',
             type: FieldType.rating,
             position: 3,
-            config: const RatingFieldConfig(min: 0, max: 10, step: 0.5),
+            config: const RatingFieldConfig(min: 0, max: 10, step: 0.1),
             createdAt: _epoch,
             updatedAt: _epoch,
           ),

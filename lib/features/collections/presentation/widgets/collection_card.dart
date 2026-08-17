@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:void_app/core/theme/app_colors.dart';
 import 'package:void_app/core/theme/app_typography.dart';
+import 'package:void_app/core/utils/schema_display_helper.dart';
 import 'package:void_app/features/collections/domain/collection.dart';
 import 'package:void_app/features/items/domain/item.dart';
 
@@ -312,9 +313,6 @@ class _CollectionCardState extends State<CollectionCard> {
 
 
   IconData _getCategoryIcon(String schemaId) {
-    if (schemaId.contains('movies')) return Icons.movie_outlined;
-    if (schemaId.contains('tv')) return Icons.tv_outlined;
-    if (schemaId.contains('books')) return Icons.menu_book_outlined;
-    return Icons.folder_open_outlined;
+    return SchemaDisplayHelper.getIcon(widget.collection.icon, schemaId);
   }
 }

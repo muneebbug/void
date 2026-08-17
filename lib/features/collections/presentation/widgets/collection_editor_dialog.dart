@@ -5,8 +5,11 @@ import 'package:void_app/app/app_providers.dart';
 import 'package:void_app/core/theme/app_colors.dart';
 import 'package:void_app/core/theme/app_typography.dart';
 import 'package:void_app/core/utils/id_generator.dart';
+import 'package:void_app/core/utils/schema_display_helper.dart';
 import 'package:void_app/features/collections/domain/collection.dart';
 import 'package:void_app/features/schemas/data/builtin_schemas.dart';
+import 'package:void_app/features/schemas/domain/schema.dart';
+import 'package:void_app/features/schemas/presentation/providers/schema_providers.dart';
 
 class CollectionEditorDialog extends ConsumerStatefulWidget {
   final Collection? collection;
@@ -52,6 +55,8 @@ class _CollectionEditorDialogState
   Widget build(BuildContext context) {
     final isEditing = widget.collection != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final schemasAsync = ref.watch(schemasStreamProvider);
+    final availableSchemas = schemasAsync.value ?? BuiltinSchemas.all;
 
     return Dialog(
       backgroundColor: isDark ? AppColors.darkCard : AppColors.lightCard,
@@ -62,7 +67,7 @@ class _CollectionEditorDialogState
         ),
       ),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
+        constraints: const BoxConstraints(maxWidth: 540),
         child: Padding(
           padding: const EdgeInsets.all(28),
           child: Form(
@@ -93,7 +98,7 @@ class _CollectionEditorDialogState
                 ),
                 const SizedBox(height: 22),
 
-                // Media Type Cards
+                // Dynamic Media Type Cards
                 if (!isEditing) ...[
                   Text(
                     'LIST TYPE',
@@ -108,40 +113,18 @@ class _CollectionEditorDialogState
                   ),
                   const SizedBox(height: 10),
                   Row(
-                    children: [
-                      Expanded(
-                        child: _buildTypeCard(
-                          schemaId: BuiltinSchemas.moviesSchemaId,
-                          icon: Icons.movie_outlined,
-                          label: 'Movies',
-                          sublabel: 'Films & cinema',
-                          color: AppColors.movieAccent,
-                          isDark: isDark,
+                    children: availableSchemas.map((schema) {
+                      final isLast = schema.id == availableSchemas.last.id;
+                      return Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.only(right: isLast ? 0 : 10),
+                          child: _buildTypeCard(
+                            schema: schema,
+                            isDark: isDark,
+                          ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildTypeCard(
-                          schemaId: BuiltinSchemas.tvShowsSchemaId,
-                          icon: Icons.tv,
-                          label: 'TV Shows',
-                          sublabel: 'Series & anime',
-                          color: AppColors.tvAccent,
-                          isDark: isDark,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _buildTypeCard(
-                          schemaId: BuiltinSchemas.booksSchemaId,
-                          icon: Icons.menu_book,
-                          label: 'Books',
-                          sublabel: 'Novels & docs',
-                          color: AppColors.bookAccent,
-                          isDark: isDark,
-                        ),
-                      ),
-                    ],
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 20),
                 ],
@@ -164,7 +147,9 @@ class _CollectionEditorDialogState
                   autofocus: true,
                   style: AppTypography.bodyMedium,
                   decoration: InputDecoration(
-                    hintText: _getPlaceholderHint(_selectedSchemaId),
+                    hintText: SchemaDisplayHelper.getPlaceholderHint(
+                      _selectedSchemaId,
+                    ),
                     contentPadding: const EdgeInsets.symmetric(
                       horizontal: 14,
                       vertical: 12,
@@ -213,7 +198,9 @@ class _CollectionEditorDialogState
                           vertical: 12,
                         ),
                       ),
-                      onPressed: _isSaving ? null : _handleSave,
+                      onPressed: _isSaving
+                          ? null
+                          : () => _handleSave(availableSchemas),
                       child: _isSaving
                           ? const SizedBox(
                               width: 16,
@@ -236,14 +223,13 @@ class _CollectionEditorDialogState
   }
 
   Widget _buildTypeCard({
-    required String schemaId,
-    required IconData icon,
-    required String label,
-    required String sublabel,
-    required Color color,
+    required Schema schema,
     required bool isDark,
   }) {
-    final isSelected = _selectedSchemaId == schemaId;
+    final isSelected = _selectedSchemaId == schema.id;
+    final color = SchemaDisplayHelper.getAccentColor(schema.id, isDark: isDark);
+    final icon = SchemaDisplayHelper.getIcon(schema.icon, schema.id);
+    final sublabel = SchemaDisplayHelper.getSublabel(schema.id);
 
     return Material(
       color: isSelected
@@ -256,11 +242,11 @@ class _CollectionEditorDialogState
         borderRadius: BorderRadius.circular(10),
         onTap: () {
           setState(() {
-            _selectedSchemaId = schemaId;
+            _selectedSchemaId = schema.id;
           });
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 10),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
@@ -282,7 +268,9 @@ class _CollectionEditorDialogState
               ),
               const SizedBox(height: 8),
               Text(
-                label,
+                schema.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.bodySmall.copyWith(
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
@@ -294,6 +282,8 @@ class _CollectionEditorDialogState
               const SizedBox(height: 2),
               Text(
                 sublabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppTypography.labelSmall.copyWith(
                   fontSize: 10,
                   color: isDark
@@ -308,17 +298,7 @@ class _CollectionEditorDialogState
     );
   }
 
-  String _getPlaceholderHint(String schemaId) {
-    if (schemaId == BuiltinSchemas.tvShowsSchemaId) {
-      return 'e.g. Sci-Fi TV Series, Fall Anime 2026';
-    }
-    if (schemaId == BuiltinSchemas.booksSchemaId) {
-      return 'e.g. 2026 Reading List, Philosophy Books';
-    }
-    return 'e.g. 2026 Movie Watchlist, Sci-Fi Movies';
-  }
-
-  Future<void> _handleSave() async {
+  Future<void> _handleSave(List<Schema> schemas) async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() {
@@ -330,12 +310,12 @@ class _CollectionEditorDialogState
       final repo = ref.read(collectionRepositoryProvider);
       final now = DateTime.now();
 
-      String icon = 'movie';
-      if (_selectedSchemaId == BuiltinSchemas.tvShowsSchemaId) {
-        icon = 'tv';
-      } else if (_selectedSchemaId == BuiltinSchemas.booksSchemaId) {
-        icon = 'menu_book';
-      }
+      final selectedSchema = schemas.firstWhere(
+        (s) => s.id == _selectedSchemaId,
+        orElse: () => BuiltinSchemas.moviesSchema,
+      );
+
+      final icon = selectedSchema.icon ?? 'folder';
 
       if (widget.collection != null) {
         final updated = widget.collection!.copyWith(
